@@ -1,0 +1,28 @@
+{
+  "name": "e-imune",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ImpactaADS5/e-imune.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ImpactaADS5/e-imune/issues"
+  },
+  "homepage": "https://github.com/ImpactaADS5/e-imune#readme",
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1",
+    "tslog": "^5.1.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}
