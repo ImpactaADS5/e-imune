@@ -10,4 +10,5 @@ dist/
 .cursor/
 /src/generated/prisma
 .agents/
+.windsurf/
 
