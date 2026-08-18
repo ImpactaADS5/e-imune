@@ -5,7 +5,6 @@
     "outDir": "dist/",
     "module": "nodenext",
     "target": "esnext",
-    "types": [],
     "lib": ["esnext"],
     "types": ["node"],
 
