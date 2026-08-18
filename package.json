@@ -23,6 +23,7 @@
   "homepage": "https://github.com/ImpactaADS5/e-imune#readme",
   "dependencies": {
     "@types/express": "^5.0.6",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "tslog": "^5.1.0",
     "tsx": "^4.23.12",
