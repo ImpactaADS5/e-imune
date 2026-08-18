@@ -5,10 +5,10 @@ services:
     restart: always
     environment:
       POSTGRES_USER: eimune
-      POSTGRES_PASSWORD: eimune
+      POSTGRES_PASSWORD: eimune123
       POSTGRES_DB: eimune_db
     ports:
-      - "5432:5432"
+      - "6032:5432"
     volumes:
       - eimune_pgdata:/var/lib/postgresql/data
 volumes:

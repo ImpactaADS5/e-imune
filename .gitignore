@@ -8,3 +8,6 @@ dist/
 .claude/
 .opencode/
 .cursor/
+/src/generated/prisma
+.agents/
+
