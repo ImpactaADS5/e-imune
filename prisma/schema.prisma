@@ -10,4 +10,14 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url     = env("DATABASE_URL")
+}
+
+model Paciente {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  dataNascimento     DateTime   
+  telefone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
