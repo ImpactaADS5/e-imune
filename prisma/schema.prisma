@@ -10,14 +10,47 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url     = env("DATABASE_URL")
 }
 
 model Paciente {
-  id        Int      @id @default(autoincrement())
-  nome      String
-  dataNascimento     DateTime   
-  telefone  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  nome            String
+  dataNascimento  DateTime  @map("data_nascimento")
+  cpf             String    @unique
+  telefone        String?
+  criadoEm        DateTime  @default(now()) @map("criado_em")
+
+  aplicacoes      Aplicacao[]
+
+  @@map("paciente")
+}
+
+model Vacina {
+  id                Int       @id @default(autoincrement())
+  nome              String
+  fabricante        String?
+  dosesNecessarias  Int       @map("doses_necessarias")
+  intervaloDias     Int       @map("intervalo_dias")
+  criadoEm          DateTime  @default(now()) @map("criado_em")
+
+  aplicacoes        Aplicacao[]
+
+  @@map("vacina")
+}
+
+model Aplicacao {
+  id                Int       @id @default(autoincrement())
+  numeroDose        Int       @map("numero_dose")
+  dataAplicacao     DateTime  @map("data_aplicacao")
+  dataProximaDose   DateTime? @map("data_proxima_dose")
+  lote              String?
+  criadoEm          DateTime  @default(now()) @map("criado_em")
+
+  pacienteId        Int       @map("paciente_id")
+  paciente          Paciente  @relation(fields: [pacienteId], references: [id])
+
+  vacinaId          Int       @map("vacina_id")
+  vacina            Vacina    @relation(fields: [vacinaId], references: [id])
+
+  @@map("aplicacao")
 }
