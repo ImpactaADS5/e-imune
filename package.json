@@ -2,6 +2,7 @@
   "name": "e-imune",
   "version": "1.0.0",
   "description": "",
+  "types": "",
   "main": "dist/app.js",
   "scripts": {
     "start": "node dist/app.js",

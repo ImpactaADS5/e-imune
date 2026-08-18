@@ -1,2 +1,8 @@
-console.log('Hello, World!');
-console.log('Estamos salvos!');
+import express from "express";
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
