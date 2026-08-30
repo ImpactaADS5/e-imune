@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Criar conta · e-Immune</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/variables.css" />
+<link rel="stylesheet" href="../assets/css/reset.css" />
+<link rel="stylesheet" href="../assets/css/base.css" />
+<link rel="stylesheet" href="../assets/css/components.css" />
+<link rel="stylesheet" href="../assets/css/responsive.css" />
+<link rel="stylesheet" href="../assets/css/auth.css" />
+</head>
+<body>
+  <div class="app-shell app-shell--auth">
+    <main class="screen auth-screen">
+      <button class="icon-btn" style="margin:16px 0 0 12px;" onclick="window.location.href='login.html'" aria-label="Voltar" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
+      <div class="auth-content">
+        <div class="brand-lockup" style="justify-content:center; margin-bottom:22px;">
+          <div class="brand-shield"><img src="../assets/img/logo.svg" alt="" aria-hidden="true" onerror="this.style.display='none'" /></div>
+          <span class="brand-title">e-Immune</span>
+        </div>
+
+        <h2>Crie sua conta</h2>
+        <p class="text-muted" style="margin:4px 0 24px;">Preencha seus dados para começar</p>
+
+        <form id="register-form" novalidate>
+          <div class="form-grid--2col">
+            <div class="input-group" id="group-nome">
+              <label for="nome">Nome completo <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+                <input type="text" id="nome" name="nome" placeholder="Digite seu nome" autocomplete="name" required />
+              </div>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="input-group" id="group-email">
+              <label for="email">E-mail <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+                <input type="email" id="email" name="email" placeholder="seu@email.com" autocomplete="email" required />
+              </div>
+              <span class="field-error"></span>
+            </div>
+          </div>
+
+          <div class="input-group" id="group-nascimento">
+            <label for="nascimento">Data de nascimento <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <input type="date" id="nascimento" name="nascimento" required />
+            </div>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-grid--2col">
+            <div class="input-group" id="group-senha">
+              <label for="senha">Senha <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <input type="password" id="senha" name="senha" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6" />
+                <span class="toggle-visibility" id="toggle-senha" role="button" tabindex="0" aria-label="Mostrar senha">
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+              </div>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="input-group" id="group-confirmar">
+              <label for="confirmar">Confirmar senha <span class="required">*</span></label>
+              <div class="input-wrapper">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <input type="password" id="confirmar" name="confirmar" placeholder="Repita a senha" autocomplete="new-password" required />
+                <span class="toggle-visibility" id="toggle-confirmar" role="button" tabindex="0" aria-label="Mostrar senha">
+                  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                </span>
+              </div>
+              <span class="field-error"></span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="btn-register" style="margin-top:6px;">Cadastrar</button>
+
+          <p class="form-footnote text-muted">
+            Já tem uma conta? <a href="login.html" class="link">Entrar</a>
+          </p>
+        </form>
+      </div>
+
+      <div class="wave-bg" aria-hidden="true"></div>
+    </main>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/register.js"></script>
+</body>
+</html>

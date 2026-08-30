@@ -7,11 +7,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Serve TUDO que está dentro de "public" (pages/ e assets/ juntos)
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-
 app.get("/", (req, res) => {
-  res.status(200).send("Hello, World!");
+  res.redirect("/pages/index.html");
 });
 
 app.listen(PORT, () => {
