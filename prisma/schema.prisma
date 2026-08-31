@@ -54,3 +54,13 @@ model Aplicacao {
 
   @@map("aplicacao")
 }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@map("user")
+}
