@@ -1,19 +1,14 @@
 import express from "express";
 import dotenv from "dotenv";
-import path from "path";
+import server from "./server";
 
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(express.static(path.join(__dirname, "..", "public")));
-
-
-app.get("/", (req, res) => {
-  res.status(200).send("Hello, World!");
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
-});
+server
+  .then((app) => {
+    console.log(`Servidor chamado`);
+  })
+  .catch((error) => {
+    console.error("Erro ao iniciar o servidor:", error);
+    process.exit(1);
+  });
