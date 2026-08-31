@@ -3,6 +3,9 @@ node_modules/
 dist/
 *.logs
 *.md
+!README.md
+!docs/**/*.md
+!prisma/ERD.md
 .vscode/
 .codex/
 .claude/

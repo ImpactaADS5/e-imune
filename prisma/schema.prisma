@@ -1,56 +1,164 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Schema S0 — RESET do legado Paciente/Vacina/Aplicacao.
+// Contratos em docs/02-banco-de-dados.md. JP entrega completo; S1+ só consome.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model Paciente {
-  id              Int       @id @default(autoincrement())
-  nome            String
-  dataNascimento  DateTime  @map("data_nascimento")
-  cpf             String    @unique
-  telefone        String?
+model User {
+  id                      String    @id @default(uuid())
+  email                   String    @unique
+  passwordHash            String    @map("password_hash")
+  nome                    String
+  cpf                     String?   @unique
+  telefone                String?
+  dataNascimento          DateTime? @map("data_nascimento")
+  twoFactorSecret         String?   @map("2fa_secret")
+  twoFactorEnabled        Boolean   @default(false) @map("2fa_enabled")
+  notificationPreferences Json      @default("{\"push\": true, \"email\": true, \"whatsapp\": false}") @map("notification_preferences")
+  role                    String    @default("USER")
+  criadoEm                DateTime  @default(now()) @map("criado_em")
+  atualizadoEm            DateTime  @updatedAt @map("atualizado_em")
+
+  sessions            Session[]
+  vaccineRecords      VaccineRecord[]
+  reminders           Reminder[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("user")
+}
+
+model Session {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  jti        String    @unique
+  userAgent  String?   @map("user_agent")
+  ip         String?
+  criadoEm   DateTime  @default(now()) @map("criado_em")
+  expiraEm   DateTime  @map("expira_em")
+  revogadoEm DateTime? @map("revogado_em")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiraEm  DateTime  @map("expira_em")
+  usadoEm   DateTime? @map("usado_em")
+  criadoEm  DateTime  @default(now()) @map("criado_em")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_token")
+}
+
+model Vaccine {
+  id               String   @id @default(uuid())
+  nome             String
+  fabricante       String?
+  dosesNecessarias Int      @map("doses_necessarias")
+  intervaloDias    Int      @map("intervalo_dias")
+  descricao        String?
+  criadoEm         DateTime @default(now()) @map("criado_em")
+
+  records   VaccineRecord[]
+  campaigns CampaignVaccines[]
+
+  @@map("vaccine")
+}
+
+model VaccineRecord {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  vaccineId       String    @map("vaccine_id")
+  numeroDose      Int       @map("numero_dose")
+  dataAplicacao   DateTime  @map("data_aplicacao")
+  dataProximaDose DateTime? @map("data_proxima_dose")
+  lote            String?
+  local           String?
+  comprovanteUrl  String?   @map("comprovante_url")
   criadoEm        DateTime  @default(now()) @map("criado_em")
 
-  aplicacoes      Aplicacao[]
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vaccine   Vaccine    @relation(fields: [vaccineId], references: [id])
+  reminders Reminder[]
 
-  @@map("paciente")
+  @@index([userId])
+  @@index([vaccineId])
+  @@map("vaccine_record")
 }
 
-model Vacina {
-  id                Int       @id @default(autoincrement())
-  nome              String
-  fabricante        String?
-  dosesNecessarias  Int       @map("doses_necessarias")
-  intervaloDias     Int       @map("intervalo_dias")
-  criadoEm          DateTime  @default(now()) @map("criado_em")
+model Reminder {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  vaccineRecordId   String?  @map("vaccine_record_id")
+  titulo            String
+  descricao         String?
+  agendadoPara      DateTime @map("agendado_para")
+  antecedenciaHoras Int      @default(24) @map("antecedencia_horas")
+  canal             String   @default("push")
+  status            String   @default("pending")
+  criadoEm          DateTime @default(now()) @map("criado_em")
 
-  aplicacoes        Aplicacao[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vaccineRecord VaccineRecord? @relation(fields: [vaccineRecordId], references: [id], onDelete: SetNull)
 
-  @@map("vacina")
+  @@index([userId, agendadoPara])
+  @@map("reminder")
 }
 
-model Aplicacao {
-  id                Int       @id @default(autoincrement())
-  numeroDose        Int       @map("numero_dose")
-  dataAplicacao     DateTime  @map("data_aplicacao")
-  dataProximaDose   DateTime? @map("data_proxima_dose")
-  lote              String?
-  criadoEm          DateTime  @default(now()) @map("criado_em")
+model Campaign {
+  id         String   @id @default(uuid())
+  titulo     String
+  descricao  String
+  destaque   Boolean  @default(false)
+  dataInicio DateTime @map("data_inicio")
+  dataFim    DateTime @map("data_fim")
+  imagemUrl  String?  @map("imagem_url")
+  criadoEm   DateTime @default(now()) @map("criado_em")
 
-  pacienteId        Int       @map("paciente_id")
-  paciente          Paciente  @relation(fields: [pacienteId], references: [id])
+  vaccines CampaignVaccines[]
 
-  vacinaId          Int       @map("vacina_id")
-  vacina            Vacina    @relation(fields: [vacinaId], references: [id])
+  @@index([destaque, dataFim])
+  @@map("campaign")
+}
 
-  @@map("aplicacao")
+model CampaignVaccines {
+  campaignId String @map("campaign_id")
+  vaccineId  String @map("vaccine_id")
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  vaccine  Vaccine  @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, vaccineId])
+  @@map("campaign_vaccines")
+}
+
+model Clinic {
+  id        String   @id @default(uuid())
+  nome      String
+  endereco  String
+  cidade    String
+  estado    String   @db.Char(2)
+  cep       String
+  latitude  Float
+  longitude Float
+  telefone  String?
+  horario   String?
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@index([latitude, longitude])
+  @@map("clinic")
 }
