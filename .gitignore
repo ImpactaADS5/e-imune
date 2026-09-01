@@ -3,6 +3,9 @@ node_modules/
 dist/
 *.logs
 *.md
+!README.md
+!docs/**/*.md
+!prisma/ERD.md
 .vscode/
 .codex/
 .claude/
@@ -11,4 +14,4 @@ dist/
 /src/generated/prisma
 .agents/
 .windsurf/
-
+docs/

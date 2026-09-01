@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+<<<<<<< HEAD
 import path from "path";
 import authRoutes from "./auth";
 
@@ -20,3 +21,17 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
+=======
+import server from "./server";
+
+dotenv.config();
+
+server
+  .then((app) => {
+    console.log(`Servidor chamado`);
+  })
+  .catch((error) => {
+    console.error("Erro ao iniciar o servidor:", error);
+    process.exit(1);
+  });
+>>>>>>> e525aa8952bb43b1c6d191cad047dd55205ea0a1
