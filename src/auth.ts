@@ -19,14 +19,14 @@ router.post('/register', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
-    const userExists = await prisma.User.findUnique({ where: { email } });
+    const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
       return res.status(400).json({ error: 'Usuário já cadastrado.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.User.create({
+    const user = await prisma.user.create({
       data: { email, password: hashedPassword, name },
     });
 
@@ -43,7 +43,7 @@ router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.User.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return res.status(401).json({ error: 'E-mail ou senha inválidos.' });
     }
