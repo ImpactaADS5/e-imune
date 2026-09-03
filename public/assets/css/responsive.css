@@ -1,0 +1,203 @@
+/* ==========================================================================
+   Tablet — expande a "casca" mantendo a mesma direção visual
+   ========================================================================== */
+@media (min-width: 768px) {
+  body { background: var(--color-bg-soft); }
+
+  .app-shell {
+    max-width: var(--container-tablet);
+    box-shadow: 0 10px 40px rgba(11, 46, 74, 0.08);
+  }
+  .app-shell--auth { border-radius: var(--radius-lg); overflow: hidden; margin: 32px auto; min-height: auto; }
+
+  .screen--padded { padding: 32px 40px calc(var(--bottomnav-h) + 32px); }
+  .quick-actions { gap: 14px; }
+  .brand-shield { width: 96px; height: 96px; }
+
+  .auth-content { padding: 8px 48px 40px; max-width: 460px; margin: 0 auto; }
+  .auth-content--wide { max-width: 560px; }
+
+  /* Formulários ganham 2 colunas onde fizer sentido */
+  .form-grid--2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+
+  .bottom-nav { max-width: var(--container-tablet); }
+
+  /* Listas viram grade de cartões em vez de pilha única */
+  #record-list, #vaccine-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  #record-list .list-item, #vaccine-list .list-item { margin-top: 0; }
+
+  /* Formulários de criação ganham cartão com respiro */
+  #record-form, #vaccine-form {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    box-shadow: var(--shadow-card);
+  }
+}
+
+/* ==========================================================================
+   Desktop — mesma paleta/estrutura; navegação inferior vira trilho lateral
+   ========================================================================== */
+@media (min-width: 1024px) {
+  body { background: var(--color-bg-soft); }
+
+  /* ---- Telas internas (com bottom-nav / sidebar) ---- */
+  .app-shell--app {
+    max-width: var(--container-desktop);
+    min-height: 100dvh;
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 24px 24px 24px 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .app-shell--app .screen {
+    flex: 1;
+    min-width: 0;
+    background: var(--color-bg-soft);
+  }
+
+  .bottom-nav {
+    position: sticky;
+    top: 24px;
+    order: -1;
+    flex: 0 0 var(--sidenav-w-desktop);
+    max-width: none;
+    width: var(--sidenav-w-desktop);
+    height: calc(100dvh - 48px);
+    margin-left: 24px;
+    border-radius: var(--radius-lg);
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 4px;
+    padding: 20px 14px;
+    box-shadow: var(--shadow-card);
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px 20px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .brand-shield--nav { width: 34px; height: 34px; border-radius: 10px; }
+  .brand-shield--nav img { width: 18px; height: 18px; }
+  .nav-brand__title { font-family: var(--font-heading); font-weight: 700; color: var(--color-primary); font-size: 16px; }
+
+  .bottom-nav__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    transition: background .15s var(--ease), color .15s var(--ease);
+  }
+  .bottom-nav__item:hover { background: var(--color-bg-soft); color: var(--color-navy); }
+  .bottom-nav__item.is-active { background: var(--color-primary-light); color: var(--color-primary-dark); font-weight: 700; }
+
+  /* ---- Topbar mais espaçosa ---- */
+  .topbar {
+    height: 76px;
+    padding: 0 40px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .topbar__title { text-align: left; font-size: 22px; margin-right: 0; }
+
+  .screen--padded {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 40px 40px;
+  }
+
+  .card { padding: 26px; }
+  .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .quick-action { padding: 20px 10px; }
+
+  /* ---- Home: dashboard em duas colunas ---- */
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    grid-template-areas:
+      "header  header"
+      "status  actions"
+      "nextdose campaign";
+    column-gap: 24px;
+    padding-top: 40px !important;
+  }
+  .home-header { grid-area: header; margin-bottom: 4px; }
+  .home-grid__status { grid-area: status; margin-top: 0 !important; }
+  .home-grid__actions { grid-area: actions; margin-top: 0 !important; }
+  .home-grid__nextdose { grid-area: nextdose; margin-top: 24px !important; }
+  .home-grid__campaign { grid-area: campaign; margin-top: 24px !important; }
+  .home-grid__actions .quick-actions { grid-template-columns: repeat(2, 1fr); height: 100%; }
+  .home-greeting { font-size: 26px; }
+  .status-row { gap: 28px; }
+  .ring { width: 116px; height: 116px; }
+  .ring__hole { width: 86px; height: 86px; }
+  .status-value { font-size: 34px; }
+
+  /* ---- Listas: mais colunas com mais espaço ---- */
+  #record-list, #vaccine-list { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .list-filters { margin-bottom: 22px; }
+
+  .fab-add { right: 40px; bottom: 40px; }
+
+  /* ---- Formulários: cartão centralizado, mais largo ---- */
+  #record-form, #vaccine-form {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 36px 44px;
+  }
+
+  /* ---- Telas de autenticação: split-screen ---- */
+  .app-shell--auth {
+    max-width: var(--container-desktop);
+    display: flex;
+    align-items: stretch;
+    min-height: 640px;
+    margin: 48px auto;
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(11, 46, 74, 0.12);
+  }
+
+  .app-shell--auth > .screen { flex: 1; }
+
+  .auth-visual {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    width: 44%;
+    background: var(--gradient-shield);
+    padding: 56px 48px;
+    color: #fff;
+  }
+  .auth-visual__content { position: relative; z-index: 1; }
+  .auth-visual__shield { background: rgba(255,255,255,0.15); backdrop-filter: blur(2px); width: 76px; height: 76px; border-radius: 22px; box-shadow: none; }
+  .auth-visual__shield img { filter: none; }
+  .auth-visual__title { color: #fff; font-size: 30px; margin-top: 20px; }
+  .auth-visual__subtitle { color: rgba(255,255,255,0.85); margin-top: 10px; max-width: 260px; line-height: 1.5; }
+  .auth-visual__points { margin-top: 36px; display: flex; flex-direction: column; gap: 16px; }
+  .auth-visual__points li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: rgba(255,255,255,0.95); }
+  .auth-visual__points svg { flex-shrink: 0; background: rgba(255,255,255,0.18); border-radius: 50%; padding: 3px; box-sizing: content-box; }
+
+  .auth-visual__blob { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.08); }
+  .auth-visual__blob--1 { width: 260px; height: 260px; right: -80px; bottom: -100px; }
+  .auth-visual__blob--2 { width: 160px; height: 160px; left: -50px; top: -40px; }
+
+  .auth-screen { width: 56%; flex: none; min-height: 0; padding-bottom: 0; display: flex; flex-direction: column; justify-content: center; }
+  .auth-content { padding: 24px 64px; max-width: 460px; }
+  .auth-content--wide { max-width: 520px; }
+  .auth-content__brand-mobile { display: none; } /* marca já aparece no painel visual */
+  .auth-screen > .icon-btn { position: absolute; top: 24px; left: 24px; }
+  .wave-bg { display: none; } /* substituída pelo painel visual */
+}

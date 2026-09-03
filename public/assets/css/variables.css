@@ -1,0 +1,63 @@
+/* ==========================================================================
+   e-Immune — Design Tokens
+   Paleta e escalas extraídas do layout de referência (splash/login/home).
+   ========================================================================== */
+:root {
+  /* Cores principais */
+  --color-primary: #0E7C74;
+  --color-primary-dark: #0A5C56;
+  --color-primary-light: #E6F7F5;
+  --color-accent: #12A594;
+
+  /* Navy (títulos, texto de destaque) */
+  --color-navy: #0B2E4A;
+  --color-navy-soft: #4A6178;
+
+  /* Neutros */
+  --color-text: #1F2A37;
+  --color-text-muted: #6B7683;
+  --color-placeholder: #9CA6B0;
+  --color-border: #E4E9EC;
+  --color-bg: #FFFFFF;
+  --color-bg-soft: #F7F9FA;
+
+  /* Cards especiais */
+  --color-cream: #FCEFDA;
+  --color-cream-accent: #E8A33D;
+  --color-mint: #E9F7F4;
+
+  /* Feedback */
+  --color-error: #E5484D;
+  --color-error-bg: #FDECEC;
+  --color-success: #1AA37E;
+  --color-success-bg: #E7F8F1;
+
+  /* Gradientes */
+  --gradient-wave: linear-gradient(180deg, #8FD9CF 0%, #4CAA9F 100%);
+  --gradient-shield: linear-gradient(135deg, #1CB1A2 0%, #0A5C56 100%);
+
+  /* Raios e sombras */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --shadow-card: 0 6px 20px rgba(11, 46, 74, 0.07);
+  --shadow-btn: 0 6px 16px rgba(14, 124, 116, 0.28);
+  --shadow-nav: 0 -2px 16px rgba(11, 46, 74, 0.06);
+
+  /* Tipografia */
+  --font-heading: "Poppins", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+
+  /* Layout */
+  --header-h: 60px;
+  --bottomnav-h: 72px;
+  --container-mobile: 480px;
+  --container-tablet: 720px;
+  --container-desktop: 1120px;
+  --sidenav-w: 96px;
+  --sidenav-w-desktop: 240px;
+
+  /* Transições */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}

@@ -1,0 +1,12 @@
+.splash {
+  justify-content: space-between;
+  align-items: center;
+  padding: 96px 24px 64px;
+  position: relative;
+  min-height: 100dvh;
+}
+.splash__center { display: flex; flex-direction: column; align-items: center; z-index: 1; }
+.brand-shield--lg { width: 110px; height: 110px; border-radius: 30px; }
+.brand-shield--lg img { width: 58px; height: 58px; }
+.splash__divider { width: 48px; height: 3px; background: var(--color-accent); border-radius: var(--radius-pill); margin: 14px 0 4px; }
+.splash__loading { z-index: 1; margin-bottom: 8px; }

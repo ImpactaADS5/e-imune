@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cadastrar Vacina · e-Immune</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/variables.css" />
+<link rel="stylesheet" href="../assets/css/reset.css" />
+<link rel="stylesheet" href="../assets/css/base.css" />
+<link rel="stylesheet" href="../assets/css/components.css" />
+<link rel="stylesheet" href="../assets/css/responsive.css" />
+<link rel="stylesheet" href="../assets/css/form.css" />
+</head>
+<body>
+  <div class="app-shell app-shell--app">
+    <header class="topbar">
+      <button class="icon-btn" onclick="window.location.href='vaccine-list.html'" aria-label="Voltar" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 class="topbar__title">Cadastrar Vacina</h1>
+      <span style="width:36px;"></span>
+    </header>
+
+    <main class="screen screen--padded" style="padding-top:8px;">
+      <form id="vaccine-form" novalidate>
+        <div class="input-group" id="group-nome">
+          <label for="nome">Nome da vacina <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>
+            <input type="text" id="nome" name="nome" placeholder="Ex.: Febre Amarela" required />
+          </div>
+          <span class="field-error"></span>
+        </div>
+
+        <div class="input-group">
+          <label for="fabricante">Fabricante (opcional)</label>
+          <div class="input-wrapper">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            <input type="text" id="fabricante" name="fabricante" placeholder="Ex.: Bio-Manguinhos" />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="doses">Doses recomendadas (opcional)</label>
+          <div class="input-wrapper">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6M15 2v6M4 22V10a2 2 0 012-2h12a2 2 0 012 2v12"/></svg>
+            <input type="number" id="doses" name="doses" min="1" max="10" placeholder="Ex.: 2" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btn-save" style="margin-top:8px;">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          Salvar
+        </button>
+      </form>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegação principal">
+      <a class="bottom-nav__item" href="home.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home
+      </a>
+      <a class="bottom-nav__item" href="vaccine-record-list.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4h6l1 2h3a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h3z"/><path d="M9 12h6M9 16h6"/></svg>Histórico
+      </a>
+      <a class="bottom-nav__item is-active" href="vaccine-list.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>Vacinas
+      </a>
+      <a class="bottom-nav__item" href="#" onclick="Utils.toast('Busca de clínicas em breve.'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Clínicas
+      </a>
+      <a class="bottom-nav__item" href="#" onclick="Utils.toast('Perfil em breve.'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Perfil
+      </a>
+    </nav>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/vaccine.js"></script>
+</body>
+</html>
