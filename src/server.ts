@@ -10,6 +10,15 @@ async function startServer() {
   const PORT = process.env.PORT || 3000;
 
   app.use(express.json());
+
+  app.use(express.static(path.join(__dirname, "..", "public/pages")));
+
+  // app.use("/auth", authRoutes);
+
+  app.get("/", (req, res) => {
+    res.status(200).send("Hello, World!");
+  });
+
   app.use(helmet());
   app.use(cors());
 
@@ -28,4 +37,4 @@ async function startServer() {
 
 const server = startServer();
 
-export default server
+export default server;

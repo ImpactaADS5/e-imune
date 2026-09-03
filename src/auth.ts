@@ -27,10 +27,10 @@ router.post('/register', async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name },
+      data: { email, passwordHash: hashedPassword, nome: name },
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { passwordHash: _, ...userWithoutPassword } = user;
     return res.status(201).json({ message: 'Cadastrado com sucesso!', user: userWithoutPassword });
   } catch (error) {
     console.error(error);
@@ -48,7 +48,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'E-mail ou senha inválidos.' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, user.passwordHash);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'E-mail ou senha inválidos.' });
     }
