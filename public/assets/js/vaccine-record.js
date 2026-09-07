@@ -125,14 +125,56 @@ async function initRecordList() {
   }
 }
 
+/**
+ * Expande allRecords (registros aplicados) em uma lista de exibição que
+ * inclui uma entrada "pendente" derivada de dataProximaDose, quando houver.
+ */
+function buildDisplayRecords() {
+  const display = [];
+
+  allRecords.forEach((r) => {
+    const vaccineNome = r.vaccineNome || r.nomeVacina || "Vacina";
+
+    display.push({
+      id: r.id,
+      recordId: r.id,
+      vaccineNome,
+      dose: r.dose || "Dose única",
+      date: r.dataAplicacao,
+      status: "applied",
+    });
+
+    if (r.dataProximaDose) {
+      display.push({
+        id: `${r.id}-next`,
+        recordId: r.id,
+        vaccineNome,
+        dose: nextDoseLabel(r.dose),
+        date: r.dataProximaDose,
+        status: "pending",
+      });
+    }
+  });
+
+  display.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  return display;
+}
+
+/** Tenta derivar o rótulo da próxima dose a partir do texto livre da dose atual. */
+function nextDoseLabel(dose) {
+  const match = String(dose || "").match(/^(\d+)/);
+  if (match) return `${Number(match[1]) + 1}ª Dose`;
+  return "Próxima dose";
+}
+
 function renderRecords() {
-  const today = Utils.todayISO();
   const listEl = $("#record-list");
   const emptyEl = $("#record-empty");
+  const display = buildDisplayRecords();
 
-  const filtered = allRecords.filter((r) => {
-    if (currentFilter === "past") return r.dataAplicacao <= today;
-    if (currentFilter === "upcoming") return r.dataAplicacao > today;
+  const filtered = display.filter((r) => {
+    if (currentFilter === "past") return r.status === "applied";
+    if (currentFilter === "pending") return r.status === "pending";
     return true;
   });
 
@@ -143,34 +185,21 @@ function renderRecords() {
   listEl.innerHTML = filtered
     .map(
       (r) => `
-    <div class="list-item" data-id="${r.id}">
-      <div class="list-item__icon">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>
-      </div>
+    <div class="list-item list-item--record" data-id="${r.id}">
       <div class="list-item__body">
-        <div class="list-item__title">${escapeHtml(r.vaccineNome || r.nomeVacina || "Vacina")}${r.dose ? " · " + escapeHtml(r.dose) : ""}</div>
-        <div class="list-item__meta">${Utils.formatDateBR(r.dataAplicacao)}${r.local ? " · " + escapeHtml(r.local) : ""}</div>
+        <div class="list-item__title">${escapeHtml(r.vaccineNome)}</div>
+        <div class="list-item__meta">${escapeHtml(r.dose)}</div>
       </div>
-      <div class="list-item__actions">
-        <button class="icon-btn icon-btn--danger" aria-label="Excluir registro" onclick="deleteRecord('${r.id}')" type="button">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>
-        </button>
+      <div class="list-item__side">
+        <div class="list-item__date">${Utils.formatDateBR(r.date)}</div>
+        <span class="status-badge status-badge--${r.status === "pending" ? "pending" : "success"}">${r.status === "pending" ? "Pendente" : "Aplicada"}</span>
       </div>
+      <button class="icon-btn list-item__chevron" aria-label="Ver detalhes" onclick="Utils.toast('Detalhes em breve.'); return false;" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
     </div>`
     )
     .join("");
-}
-
-async function deleteRecord(id) {
-  if (!confirm("Remover este registro do histórico?")) return;
-  try {
-    await Api.del(`${window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS}/${id}`);
-    allRecords = allRecords.filter((r) => r.id !== id);
-    renderRecords();
-    Utils.toast("Registro removido.", "success");
-  } catch (err) {
-    Utils.toast(err.message || "Não foi possível remover o registro.", "error");
-  }
 }
 
 function escapeHtml(str) {

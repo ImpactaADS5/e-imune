@@ -31,6 +31,8 @@
   --color-error-bg: #FDECEC;
   --color-success: #1AA37E;
   --color-success-bg: #E7F8F1;
+  --color-warning: #E8873D;
+  --color-warning-bg: #FDF0E4;
 
   /* Gradientes */
   --gradient-wave: linear-gradient(180deg, #8FD9CF 0%, #4CAA9F 100%);

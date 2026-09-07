@@ -6,3 +6,22 @@
   border:1px solid var(--color-border); font-size:13px; font-weight:600; color: var(--color-text-muted);
 }
 .filter-chip.is-active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+
+/* Item de registro do histórico (nome+dose à esquerda, data+status à direita) */
+.list-item--record { justify-content: space-between; }
+.list-item--record .list-item__title { font-size: 15.5px; }
+.list-item--record .list-item__meta { margin-top: 3px; }
+.list-item__side {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  flex-shrink: 0;
+}
+.list-item__date { font-size: 13px; color: var(--color-text-muted); }
+.list-item__chevron { color: var(--color-placeholder); flex-shrink: 0; }
+
+.status-badge {
+  display: inline-flex; align-items: center;
+  padding: 4px 12px; border-radius: var(--radius-pill);
+  font-size: 12.5px; font-weight: 600;
+}
+.status-badge--success { background: var(--color-success-bg); color: var(--color-success); }
+.status-badge--pending { background: var(--color-warning-bg); color: var(--color-warning); }
