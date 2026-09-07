@@ -20,14 +20,16 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <h1 class="topbar__title">Histórico de Vacinas</h1>
-      <span style="width:36px;"></span>
+      <button class="icon-btn" onclick="Utils.toast('Filtros avançados em breve.'); return false;" aria-label="Filtrar" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M7 12h10M10 19h4"/></svg>
+      </button>
     </header>
 
     <main class="screen screen--padded" style="padding-top:8px;">
       <div class="list-filters">
         <button class="filter-chip is-active" data-filter="all" type="button">Todas</button>
         <button class="filter-chip" data-filter="past" type="button">Aplicadas</button>
-        <button class="filter-chip" data-filter="upcoming" type="button">Próximas</button>
+        <button class="filter-chip" data-filter="pending" type="button">Pendentes</button>
       </div>
 
       <div id="record-skeleton">
@@ -43,6 +45,22 @@
         <p class="empty-state__title">Nenhum registro ainda</p>
         <p>Registre sua primeira vacina para começar seu histórico.</p>
       </div>
+
+      <section class="card card--mint" style="margin-top:16px;">
+        <div style="display:flex; align-items:flex-start; gap:14px;">
+          <div class="list-item__icon" style="background:#fff; color:var(--color-primary);">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+          </div>
+          <div>
+            <p style="font-weight:600; color:var(--color-navy);">Mantenha suas vacinas em dia!</p>
+            <p class="text-muted" style="font-size:13.5px; margin-top:4px;">Ative os lembretes para não esquecer as próximas doses.</p>
+          </div>
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="Utils.toast('Configuração de lembretes em breve.')" type="button">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+          Configurar lembretes
+        </button>
+      </section>
     </main>
 
     <button class="btn-fab fab-add" onclick="window.location.href='vaccine-record-form.html'" aria-label="Registrar nova vacina" type="button">
