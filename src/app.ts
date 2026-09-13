@@ -16,6 +16,9 @@ import vaccineRecordRoutes from "./modules/vaccine-record/vaccine-record.routes"
 
 
 const app = express();
+// O tráfego público chega pelo Cloudflare Tunnel antes de alcançar o Express.
+// Confiar no único proxy local permite ao rate limit usar o IP real do cliente.
+app.set("trust proxy", 1);
 
 // Configurações e segurança
 app.use(helmet());

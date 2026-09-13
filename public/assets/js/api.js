@@ -52,7 +52,10 @@ const Api = (() => {
     const data = isJson ? await response.json().catch(() => null) : null;
 
     if (!response.ok) {
-      const message = data?.message || data?.error || "Ocorreu um erro. Tente novamente.";
+      const fallbackMessage = response.status >= 500
+        ? "Servidor temporariamente indisponível. Tente novamente em instantes."
+        : "Ocorreu um erro. Tente novamente.";
+      const message = data?.message || data?.error || fallbackMessage;
       if (response.status === 401) clearSession();
       throw new ApiError(message, response.status, data);
     }
