@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { env } from "./config/env";
 import { prisma } from "./lib/prisma";
+import log, { describeError, sanitizeForLog } from "./lib/log";
 import { requireAuth } from "./middleware/auth";
 import { loginSchema, registerSchema } from "./lib/validation";
 
@@ -31,14 +32,20 @@ function publicUser(user: {
 
 // Rota de Cadastro
 router.post('/register', async (req: Request, res: Response) => {
+  log.debug({ requestId: req.requestId, body: sanitizeForLog(req.body) }, 'Auth.register: payload recebido para validação.');
   try {
     const parsed = registerSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos.', details: parsed.error.flatten() });
+    if (!parsed.success) {
+      log.warn({ requestId: req.requestId, validation: parsed.error.flatten() }, 'Auth.register: payload rejeitado pela validação.');
+      return res.status(400).json({ error: 'Dados inválidos.', details: parsed.error.flatten() });
+    }
     const { email: rawEmail, senha, nome, dataNascimento } = parsed.data;
     const email = rawEmail.toLowerCase();
+    log.debug({ requestId: req.requestId, data: sanitizeForLog({ email, nome, dataNascimento }) }, 'Auth.register: dados normalizados, consultando usuário existente.');
 
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
+      log.warn({ requestId: req.requestId, email }, 'Auth.register: cadastro recusado porque o e-mail já existe.');
       return res.status(409).json({ error: 'Usuário já cadastrado.' });
     }
 
@@ -53,9 +60,10 @@ router.post('/register', async (req: Request, res: Response) => {
       },
     });
 
+    log.info({ requestId: req.requestId, user: publicUser(user) }, 'Auth.register: usuário criado com sucesso.');
     return res.status(201).json({ message: 'Cadastrado com sucesso!', user: publicUser(user) });
   } catch (error) {
-    console.error(error);
+    log.error({ requestId: req.requestId, error: describeError(error) }, 'Auth.register: erro ao criar usuário.');
     if ((error as { code?: string }).code === 'P2002') {
       return res.status(409).json({ error: 'Usuário já cadastrado.' });
     }
@@ -65,19 +73,26 @@ router.post('/register', async (req: Request, res: Response) => {
 
 // Rota de Login
 router.post('/login', async (req: Request, res: Response) => {
+  log.debug({ requestId: req.requestId, body: sanitizeForLog(req.body) }, 'Auth.login: tentativa de autenticação recebida.');
   try {
     const parsed = loginSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Dados inválidos.', details: parsed.error.flatten() });
+    if (!parsed.success) {
+      log.warn({ requestId: req.requestId, validation: parsed.error.flatten() }, 'Auth.login: payload rejeitado pela validação.');
+      return res.status(400).json({ error: 'Dados inválidos.', details: parsed.error.flatten() });
+    }
     const { email: rawEmail, senha } = parsed.data;
     const email = rawEmail.toLowerCase();
+    log.debug({ requestId: req.requestId, email }, 'Auth.login: procurando usuário pelo e-mail normalizado.');
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      log.warn({ requestId: req.requestId, email }, 'Auth.login: usuário não encontrado.');
       return res.status(401).json({ error: 'E-mail ou senha inválidos.' });
     }
 
     const passwordMatch = await bcrypt.compare(senha, user.passwordHash);
     if (!passwordMatch) {
+      log.warn({ requestId: req.requestId, email }, 'Auth.login: senha inválida.');
       return res.status(401).json({ error: 'E-mail ou senha inválidos.' });
     }
 
@@ -98,24 +113,29 @@ router.post('/login', async (req: Request, res: Response) => {
       },
     });
 
+    log.info({ requestId: req.requestId, user: publicUser(user), sessionId: jti }, 'Auth.login: autenticação concluída e sessão criada.');
     return res.json({ message: 'Login realizado com sucesso!', token, user: publicUser(user) });
   } catch (error) {
-    console.error(error);
+    log.error({ requestId: req.requestId, error: describeError(error) }, 'Auth.login: erro inesperado durante autenticação.');
     return res.status(500).json({ error: 'Erro interno no servidor.' });
   }
 });
 
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
+  log.debug({ requestId: req.requestId, userId: req.user?.userId }, 'Auth.me: carregando dados públicos do usuário autenticado.');
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
     select: { id: true, email: true, nome: true, role: true, cpf: true, telefone: true, dataNascimento: true },
   });
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  log.info({ requestId: req.requestId, user: publicUser(user) }, 'Auth.me: dados do usuário retornados.');
   return res.json(user);
 });
 
 router.post('/logout', requireAuth, async (req: Request, res: Response) => {
+  log.debug({ requestId: req.requestId, userId: req.user?.userId, sessionId: req.user?.jti }, 'Auth.logout: revogando sessão atual.');
   await prisma.session.updateMany({ where: { jti: req.user!.jti }, data: { revogadoEm: new Date() } });
+  log.info({ requestId: req.requestId, userId: req.user?.userId, sessionId: req.user?.jti }, 'Auth.logout: sessão revogada com sucesso.');
   return res.status(204).send();
 });
 

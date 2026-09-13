@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+import log from "./log";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -9,6 +10,7 @@ if (!connectionString) {
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const reusedClient = Boolean(globalForPrisma.prisma);
 
 const prisma =
   globalForPrisma.prisma ??
@@ -19,6 +21,8 @@ const prisma =
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
+
+log.debug({ reusedClient, environment: process.env.NODE_ENV || "development" }, "Prisma: cliente de banco inicializado.");
 
 export { prisma };
 export default prisma;
