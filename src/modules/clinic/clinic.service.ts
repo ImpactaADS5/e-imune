@@ -1,21 +1,10 @@
-import prisma from "../../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { CreateClinicInput } from "../../lib/validation";
 
-interface CreateClinicData {
-  nome: string;
-  endereco: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  latitude: number;
-  longitude: number;
-  telefone?: string;
-  horario?: string;
-}
-
-export const createClinic = async (data: CreateClinicData) => {
+export const createClinic = async (data: CreateClinicInput) => {
   return await prisma.clinic.create({ data });
 };
 
 export const getAllClinics = async () => {
-  return await prisma.clinic.findMany();
+  return await prisma.clinic.findMany({ orderBy: { nome: "asc" } });
 };

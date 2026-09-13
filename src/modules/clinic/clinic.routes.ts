@@ -1,9 +1,10 @@
 import { Router } from "express";
 import * as clinicController from "./clinic.controller";
+import { requireAuth, requireRole } from "../../middleware/auth";
 
 const router = Router();
 
-router.post("/", clinicController.create);
-router.get("/", clinicController.list);
+router.post("/", requireAuth, requireRole("ADMIN"), clinicController.create);
+router.get("/", requireAuth, clinicController.list);
 
 export default router;

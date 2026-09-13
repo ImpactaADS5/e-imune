@@ -26,7 +26,8 @@ const Utils = {
 
   formatDateBR(isoDate) {
     if (!isoDate) return "—";
-    const [y, m, d] = isoDate.split("-");
+    const [date] = String(isoDate).split("T");
+    const [y, m, d] = date.split("-");
     return `${d}/${m}/${y}`;
   },
 

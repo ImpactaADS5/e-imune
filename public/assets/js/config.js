@@ -2,14 +2,18 @@
  * Configuração central da API.
  * Ajuste apenas BASE_URL para apontar para o backend Node/Prisma.
  */
+
 window.API_CONFIG = {
-  BASE_URL: "http://localhost:3333/api",
+  BASE_URL: "/api",
   ENDPOINTS: {
     REGISTER: "/auth/register",
     LOGIN: "/auth/login",
-    ME: "/users/me",
+    ME: "/auth/me",
     VACCINES: "/vaccines",
     VACCINE_RECORDS: "/vaccine-records",
+    CAMPAIGNS: "/campaigns",
+    CLINICS: "/clinics",
+    REMINDERS: "/reminders",
   },
   STORAGE_KEYS: {
     TOKEN: "eimmune_token",

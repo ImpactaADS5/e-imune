@@ -16,6 +16,8 @@ npm run db:setup
 npm run dev
 ```
 
+`JWT_SECRET` é obrigatório e deve ser substituído por um valor aleatório com pelo menos 32 caracteres antes de publicar o sistema.
+
 `npm ci` instala as dependências travadas no `package-lock.json`. Use isso no clone; não use `npm install` no dia a dia do time.
 
 O Prisma Client é gerado em `src/generated/prisma` (não vai no git). Por isso o `db:setup` roda `prisma generate` depois do `npm ci`.

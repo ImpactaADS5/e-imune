@@ -16,10 +16,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function renderStatus(records) {
-  // Regra de exibição: cálculo simples e local, apenas ilustrativo (o app não tem caráter oficial).
   const total = records.length;
-  const meta = Math.max(total, 8); // meta ilustrativa mínima
-  const pct = total === 0 ? 0 : Math.min(100, Math.round((total / meta) * 100));
+  const vaccines = new Map();
+  records.forEach((record) => vaccines.set(record.vaccineId, record.vaccine?.dosesNecessarias || 1));
+  const meta = Math.max(1, [...vaccines.values()].reduce((sum, doses) => sum + doses, 0));
+  const pct = Math.min(100, Math.round((total / meta) * 100));
 
   $("#status-ring").style.setProperty("--pct", pct);
   $("#status-pct").textContent = pct;
@@ -37,14 +38,14 @@ function starIcon() {
 function renderNextDose(records) {
   const today = Utils.todayISO();
   const upcoming = records
-    .filter((r) => r.dataAplicacao && r.dataAplicacao >= today)
-    .sort((a, b) => a.dataAplicacao.localeCompare(b.dataAplicacao))[0];
+    .filter((r) => r.dataProximaDose && r.dataProximaDose >= today)
+    .sort((a, b) => a.dataProximaDose.localeCompare(b.dataProximaDose))[0];
 
   if (!upcoming) return;
 
   $("#next-dose-card").style.display = "block";
   $("#next-dose-name").textContent = `${upcoming.vaccineNome || upcoming.nomeVacina || "Vacina"}${
-    upcoming.dose ? " – " + upcoming.dose : ""
+    upcoming.numeroDose ? " – " + upcoming.numeroDose + "ª Dose" : ""
   }`;
-  $("#next-dose-date").textContent = Utils.formatDateBR(upcoming.dataAplicacao);
+  $("#next-dose-date").textContent = Utils.formatDateBR(upcoming.dataProximaDose);
 }

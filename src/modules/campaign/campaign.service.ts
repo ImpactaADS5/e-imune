@@ -1,15 +1,7 @@
-import prisma from "../../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { CreateCampaignInput } from "../../lib/validation";
 
-interface CreateCampaignData {
-  titulo: string;
-  descricao: string;
-  destaque?: boolean;
-  dataInicio: string; // Vem como string ISO do JSON
-  dataFim: string;
-  imagemUrl?: string;
-}
-
-export const createCampaign = async (data: CreateCampaignData) => {
+export const createCampaign = async (data: CreateCampaignInput) => {
   return await prisma.campaign.create({
     data: {
       ...data,
@@ -20,5 +12,8 @@ export const createCampaign = async (data: CreateCampaignData) => {
 };
 
 export const getAllCampaigns = async () => {
-  return await prisma.campaign.findMany();
+  return await prisma.campaign.findMany({
+    include: { vaccines: { include: { vaccine: true } } },
+    orderBy: [{ destaque: "desc" }, { dataFim: "asc" }],
+  });
 };

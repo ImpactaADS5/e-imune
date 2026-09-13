@@ -43,10 +43,17 @@
         </div>
 
         <div class="input-group">
-          <label for="doses">Doses recomendadas (opcional)</label>
+          <label for="doses">Doses necessárias</label>
           <div class="input-wrapper">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6M15 2v6M4 22V10a2 2 0 012-2h12a2 2 0 012 2v12"/></svg>
-            <input type="number" id="doses" name="doses" min="1" max="10" placeholder="Ex.: 2" />
+            <input type="number" id="doses" name="doses" min="1" max="20" value="1" required />
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="intervalo">Intervalo entre doses (dias)</label>
+          <div class="input-wrapper">
+            <input type="number" id="intervalo" name="intervalo" min="0" max="3650" value="0" required />
           </div>
         </div>
 

@@ -1,12 +1,16 @@
 import { Request, Response } from "express";
 import * as clinicService from "./clinic.service";
+import { clinicSchema } from "../../lib/validation";
 
 export const create = async (req: Request, res: Response) => {
   try {
-    const result = await clinicService.createClinic(req.body);
+    const parsed = clinicSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: "Dados inválidos.", details: parsed.error.flatten() });
+    const result = await clinicService.createClinic(parsed.data);
     res.status(201).json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: "Erro ao criar clínica", detalhes: error.message });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao criar clínica" });
   }
 };
 

@@ -78,11 +78,11 @@ async function initRecordForm() {
     try {
       await Api.post(window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS, {
         vaccineId: vaccineSelect.value,
-        dose: $("#dose").value.trim() || null,
+        numeroDose: Number($("#dose").value),
         dataAplicacao: dataInput.value,
+        dataProximaDose: $("#dataProximaDose").value || null,
         local: $("#local").value.trim() || null,
         lote: $("#lote").value.trim() || null,
-        observacoes: obsInput.value.trim() || null,
       });
       Utils.toast("Vacina registrada com sucesso!", "success");
       setTimeout(() => (window.location.href = "vaccine-record-list.html"), 1000);
@@ -139,7 +139,7 @@ function buildDisplayRecords() {
       id: r.id,
       recordId: r.id,
       vaccineNome,
-      dose: r.dose || "Dose única",
+       dose: r.numeroDose ? `${r.numeroDose}ª Dose` : "Dose única",
       date: r.dataAplicacao,
       status: "applied",
     });
@@ -149,7 +149,7 @@ function buildDisplayRecords() {
         id: `${r.id}-next`,
         recordId: r.id,
         vaccineNome,
-        dose: nextDoseLabel(r.dose),
+        dose: nextDoseLabel(r.numeroDose),
         date: r.dataProximaDose,
         status: "pending",
       });

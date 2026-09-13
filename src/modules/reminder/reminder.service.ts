@@ -1,25 +1,28 @@
-import prisma from "../../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { CreateReminderInput } from "../../lib/validation";
 
-interface CreateReminderData {
-  userId: string;
-  vaccineRecordId?: string;
-  titulo: string;
-  descricao?: string;
-  agendadoPara: string;
-  antecedenciaHoras?: number;
-  canal?: string;
-  status?: string;
-}
+export const createReminder = async (userId: string, data: CreateReminderInput) => {
+  if (data.vaccineRecordId) {
+    const record = await prisma.vaccineRecord.findFirst({ where: { id: data.vaccineRecordId, userId } });
+    if (!record) {
+      const error = new Error("Registro de vacina não encontrado.") as Error & { code?: string };
+      error.code = "VACCINE_RECORD_NOT_FOUND";
+      throw error;
+    }
+  }
 
-export const createReminder = async (data: CreateReminderData) => {
   return await prisma.reminder.create({
     data: {
       ...data,
+      userId,
       agendadoPara: new Date(data.agendadoPara),
     },
   });
 };
 
-export const getAllReminders = async () => {
-  return await prisma.reminder.findMany();
+export const getAllReminders = async (userId: string) => {
+  return await prisma.reminder.findMany({
+    where: { userId },
+    orderBy: { agendadoPara: "asc" },
+  });
 };

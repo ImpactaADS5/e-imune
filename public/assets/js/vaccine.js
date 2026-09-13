@@ -33,7 +33,8 @@ function initVaccineForm() {
       await Api.post(window.API_CONFIG.ENDPOINTS.VACCINES, {
         nome: nome.value.trim(),
         fabricante: $("#fabricante").value.trim() || null,
-        dosesRecomendadas: $("#doses").value ? Number($("#doses").value) : null,
+        dosesNecessarias: Number($("#doses").value),
+        intervaloDias: Number($("#intervalo").value),
       });
       Utils.toast("Vacina cadastrada com sucesso!", "success");
       setTimeout(() => (window.location.href = "vaccine-list.html"), 1000);
@@ -79,7 +80,7 @@ function renderVaccines() {
       <div class="list-item__body">
         <div class="list-item__title">${escapeHtmlV(v.nome)}</div>
         <div class="list-item__meta">${v.fabricante ? escapeHtmlV(v.fabricante) : "Fabricante não informado"}${
-        v.dosesRecomendadas ? " · " + v.dosesRecomendadas + " doses" : ""
+        v.dosesNecessarias ? " · " + v.dosesNecessarias + " doses" : ""
       }</div>
       </div>
       <div class="list-item__actions">

@@ -1,15 +1,8 @@
-import prisma from "../../lib/prisma";
+import { prisma } from "../../lib/prisma";
+import { CreateVaccineInput } from "../../lib/validation";
 
 // Interface para garantir que os dados recebidos estão no formato certo
-interface CreateVaccineData {
-  nome: string;
-  fabricante?: string;
-  dosesNecessarias: number;
-  intervaloDias: number;
-  descricao?: string;
-}
-
-export const createVaccine = async (data: CreateVaccineData) => {
+export const createVaccine = async (data: CreateVaccineInput) => {
   // O prisma.vaccine.create vai inserir os dados reais no banco
   const newVaccine = await prisma.vaccine.create({
     data: {
@@ -26,6 +19,8 @@ export const createVaccine = async (data: CreateVaccineData) => {
 
 export const getAllVaccines = async () => {
   // O prisma.vaccine.findMany busca todas as vacinas cadastradas
-  const vaccines = await prisma.vaccine.findMany();
+  const vaccines = await prisma.vaccine.findMany({ orderBy: { nome: "asc" } });
   return vaccines;
 };
+
+export const deleteVaccine = async (id: string) => prisma.vaccine.delete({ where: { id } });
