@@ -25,30 +25,56 @@
 
 /* ==========================================================================
    Logo / marca
-   ============================================================ */
- 
+   ========================================================================== */
 .brand-shield {
-  width: 84px; height: 84px;
-  border-radius: 26px;
-  background: var();
-  display: flex; align-items: center; justify-content: center;
+  width: auto;
+  height: auto;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
-  box-shadow: var(--shadow-btn);
+  box-shadow: none;
 }
-.brand-shield img, .brand-shield svg { width: 44px; height: 44px; }
+
+.brand-shield img,
+.brand-shield svg {
+  width: 84px;
+  height: auto;
+  display: block;
+}
+
 .brand-shield__badge {
-  position: absolute; right: -6px; bottom: -6px;
-  width: 26px; height: 26px; border-radius: 50%;
-  
-  
-  display: flex; align-items: center; justify-content: center;
-  ;
+  display: none;
 }
-.brand-lockup { display: flex; align-items: center; gap: 10px; }
-.brand-lockup .brand-shield { width: 40px; height: 40px; border-radius: 12px; }
-.brand-lockup .brand-shield img, .brand-lockup .brand-shield svg { width: 22px; height: 22px; }
-.brand-title { font-size: 26px; font-weight: 700; color: var(); }
-.brand-lockup .brand-title { font-size: 20px; }
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-lockup .brand-shield {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+}
+
+.brand-lockup .brand-shield img,
+.brand-lockup .brand-shield svg {
+  width: 40px;
+  height: auto;
+}
+
+.brand-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.brand-lockup .brand-title {
+  font-size: 20px;
+}
 /* ==========================================================================
    Botões
    ========================================================================== */
