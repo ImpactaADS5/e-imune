@@ -72,7 +72,8 @@
   background: var(--color-primary); color: #fff;
   box-shadow: var(--shadow-btn);
   display: flex; align-items: center; justify-content: center;
-  position: fixed; z-index: 20;
+  position: fixed; z-index: 40;
+  text-decoration: none;
 }
 
 /* ==========================================================================

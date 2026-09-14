@@ -6,8 +6,7 @@ import rateLimit from "express-rate-limit";
 import { env } from "./config/env";
 import log from "./lib/log";
 import { requestLogger } from "./middleware/request-logger";
-
-// Importe a rota da vacina aqui
+import authRouter from "./auth";
 import vaccineRoutes from "./modules/vaccine/vaccine.routes";
 import clinicRoutes from "./modules/clinic/clinic.routes";
 import campaignRoutes from "./modules/campaign/campaign.routes";
@@ -21,7 +20,18 @@ const app = express();
 app.set("trust proxy", 1);
 
 // Configurações e segurança
-app.use(helmet());
+// As páginas estáticas usam onclick=...; o default do Helmet (script-src-attr 'none')
+// bloqueava o FAB de adicionar e outros botões de navegação.
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        "script-src-attr": ["'unsafe-inline'"],
+      },
+    },
+  })
+);
 app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
 app.use(requestLogger);
@@ -29,7 +39,6 @@ app.use(express.static(path.join(__dirname, "..", "public")));
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: "draft-8", legacyHeaders: false });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false });
 
-import authRouter from "./auth";
 app.use("/api", apiLimiter);
 app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/campaigns", campaignRoutes);
