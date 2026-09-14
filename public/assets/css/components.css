@@ -30,7 +30,7 @@
 .brand-shield {
   width: 84px; height: 84px;
   border-radius: 26px;
-  background: var(--gradient-shield);
+  background: var();
   display: flex; align-items: center; justify-content: center;
   position: relative;
   box-shadow: var(--shadow-btn);
