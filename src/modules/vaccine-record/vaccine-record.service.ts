@@ -1,35 +1,100 @@
-import { prisma } from "../../lib/prisma";
-import { CreateVaccineRecordInput } from "../../lib/validation";
-import log, { sanitizeForLog } from "../../lib/log";
+import prisma from "../../lib/prisma";
 
-export const createVaccineRecord = async (userId: string, data: CreateVaccineRecordInput) => {
-  log.debug({ userId, data: sanitizeForLog(data) }, "VaccineRecordService.create: iniciando criação do registro.");
-  const record = await prisma.vaccineRecord.create({
+// 1. Interface (agora exportada para garantir que o TypeScript a encontre)
+export interface CreateVaccineRecordData {
+  userId: string;
+  vaccineId: string;
+  numeroDose: number;
+  dataAplicacao: string;
+  dataProximaDose?: string;
+  lote?: string;
+  local?: string;
+  comprovanteUrl?: string;
+}
+
+// 2. Funções da AC1
+export const createVaccineRecord = async (data: CreateVaccineRecordData) => {
+  return await prisma.vaccineRecord.create({
     data: {
       ...data,
-      userId,
       dataAplicacao: new Date(data.dataAplicacao),
       dataProximaDose: data.dataProximaDose ? new Date(data.dataProximaDose) : null,
     },
   });
-  log.info({ userId, record: sanitizeForLog(record) }, "VaccineRecordService.create: registro criado no banco.");
-  return record;
 };
 
 export const getAllVaccineRecords = async (userId: string) => {
-  log.debug({ userId }, "VaccineRecordService.list: buscando registros do usuário.");
+  return await prisma.vaccineRecord.findMany({
+    where: { userId }
+  });
+};
+
+// 3. Funções da AC2
+export const updateVaccineRecord = async (id: string, data: Partial<CreateVaccineRecordData>) => {
+  const updateData: any = { ...data };
+  if (data.dataAplicacao) updateData.dataAplicacao = new Date(data.dataAplicacao);
+  if (data.dataProximaDose) updateData.dataProximaDose = new Date(data.dataProximaDose);
+
+  return await prisma.vaccineRecord.update({
+    where: { id },
+    data: updateData,
+  });
+};
+
+export const getVaccinationProgress = async (userId: string) => {
   const records = await prisma.vaccineRecord.findMany({
     where: { userId },
-    include: { vaccine: { select: { id: true, nome: true, dosesNecessarias: true } } },
-    orderBy: { dataAplicacao: "desc" },
+    include: { vaccine: true },
   });
 
-  const response = records.map((record) => ({
-    ...record,
-    dataAplicacao: record.dataAplicacao.toISOString().slice(0, 10),
-    dataProximaDose: record.dataProximaDose?.toISOString().slice(0, 10) ?? null,
-    vaccineNome: record.vaccine.nome,
-  }));
-  log.info({ userId, count: response.length, records: sanitizeForLog(response) }, "VaccineRecordService.list: registros carregados.");
-  return response;
+  if (records.length === 0) return { totalTaken: 0, totalRequired: 0, percentage: 0, status: "Nenhuma vacina registrada" };
+
+  const progressMap = new Map();
+  
+  records.forEach((record) => {
+    const vid = record.vaccineId;
+    if (!progressMap.has(vid)) {
+      progressMap.set(vid, { taken: 0, required: record.vaccine.dosesNecessarias });
+    }
+    const current = progressMap.get(vid);
+    if (record.numeroDose > current.taken) {
+      current.taken = record.numeroDose;
+    }
+  });
+
+  let totalRequired = 0;
+  let totalTaken = 0;
+
+  progressMap.forEach((val) => {
+    totalRequired += val.required;
+    totalTaken += val.taken;
+  });
+
+  const percentage = Math.round((totalTaken / totalRequired) * 100);
+
+  return {
+    totalTaken,
+    totalRequired,
+    percentage,
+    status: percentage >= 100 ? "Completo" : "Em andamento",
+  };
+};
+
+export const getNextDoses = async (userId: string) => {
+  const hoje = new Date();
+  
+  const records = await prisma.vaccineRecord.findMany({
+    where: {
+      userId,
+      dataProximaDose: { not: null, gte: hoje },
+    },
+    include: { vaccine: true },
+    orderBy: { dataProximaDose: 'asc' },
+  });
+
+  return records.map((record) => {
+    const diffTime = record.dataProximaDose!.getTime() - hoje.getTime();
+    const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return { ...record, diasRestantes };
+  });
 };
