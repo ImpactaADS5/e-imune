@@ -96,28 +96,42 @@ async function initRecordForm() {
 }
 
 /* ---------------------------------------------------------------------- */
-/* Histórico de Vacinas (LIST)                                            */
+/* Histórico de Vacinas (LIST) — abas, filtro por vacina                  */
 /* ---------------------------------------------------------------------- */
 let allRecords = [];
+let vaccineCatalog = new Map();
 let currentFilter = "all";
+let currentVaccineId = "";
 
 async function initRecordList() {
   const params = new URLSearchParams(window.location.search);
   currentFilter = params.get("filter") || "all";
 
   $$(".filter-chip").forEach((chip) => {
-    chip.classList.toggle("is-active", chip.dataset.filter === currentFilter);
     chip.addEventListener("click", () => {
       currentFilter = chip.dataset.filter;
-      $$(".filter-chip").forEach((c) => c.classList.remove("is-active"));
-      chip.classList.add("is-active");
       renderRecords();
     });
   });
 
+  $("#btn-filter").addEventListener("click", () => {
+    const panel = $("#filter-panel");
+    panel.hidden = !panel.hidden;
+  });
+
+  $("#filter-vaccine").addEventListener("change", (event) => {
+    currentVaccineId = event.target.value;
+    renderRecords();
+  });
+
   try {
-    allRecords = (await Api.get(window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS)) || [];
-    allRecords.sort((a, b) => (b.dataAplicacao || "").localeCompare(a.dataAplicacao || ""));
+    const [records, vaccines] = await Promise.all([
+      Api.get(window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS),
+      Api.get(window.API_CONFIG.ENDPOINTS.VACCINES).catch(() => []),
+    ]);
+    allRecords = records || [];
+    (vaccines || []).forEach((v) => vaccineCatalog.set(v.id, v));
+    fillVaccineFilter();
     renderRecords();
   } catch (err) {
     $("#record-skeleton").hidden = true;
@@ -125,31 +139,62 @@ async function initRecordList() {
   }
 }
 
+/** O endpoint de listagem não traz o nome da vacina: resolve pelo catálogo (ou por r.vaccine, se vier). */
+function vaccineOf(record) {
+  return record.vaccine || vaccineCatalog.get(record.vaccineId) || null;
+}
+
+function fillVaccineFilter() {
+  const select = $("#filter-vaccine");
+  const seen = new Map();
+  allRecords.forEach((r) => {
+    const v = vaccineOf(r);
+    if (!seen.has(r.vaccineId)) seen.set(r.vaccineId, v?.nome || "Vacina");
+  });
+  [...seen.entries()]
+    .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
+    .forEach(([id, nome]) => {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = nome;
+      select.appendChild(opt);
+    });
+}
+
+function doseLabel(numeroDose, vaccine) {
+  if (vaccine?.dosesNecessarias === 1) return "Dose Única";
+  return numeroDose ? `Dose ${numeroDose}` : "Dose Única";
+}
+
 /**
- * Expande allRecords (registros aplicados) em uma lista de exibição que
- * inclui uma entrada "pendente" derivada de dataProximaDose, quando houver.
+ * Expande allRecords (aplicados) em uma lista de exibição que inclui uma
+ * entrada "pendente" derivada de dataProximaDose, quando a dose seguinte
+ * ainda não foi registrada.
  */
 function buildDisplayRecords() {
+  const applied = new Set(allRecords.map((r) => `${r.vaccineId}:${r.numeroDose}`));
   const display = [];
 
   allRecords.forEach((r) => {
-    const vaccineNome = r.vaccineNome || r.nomeVacina || "Vacina";
+    const vaccine = vaccineOf(r);
+    const vaccineNome = vaccine?.nome || "Vacina";
 
     display.push({
       id: r.id,
-      recordId: r.id,
+      vaccineId: r.vaccineId,
       vaccineNome,
-       dose: r.numeroDose ? `${r.numeroDose}ª Dose` : "Dose única",
+      dose: doseLabel(r.numeroDose, vaccine),
       date: r.dataAplicacao,
       status: "applied",
     });
 
-    if (r.dataProximaDose) {
+    const nextDose = (r.numeroDose || 0) + 1;
+    if (r.dataProximaDose && !applied.has(`${r.vaccineId}:${nextDose}`)) {
       display.push({
         id: `${r.id}-next`,
-        recordId: r.id,
+        vaccineId: r.vaccineId,
         vaccineNome,
-        dose: nextDoseLabel(r.numeroDose),
+        dose: doseLabel(nextDose, vaccine),
         date: r.dataProximaDose,
         status: "pending",
       });
@@ -160,19 +205,23 @@ function buildDisplayRecords() {
   return display;
 }
 
-/** Tenta derivar o rótulo da próxima dose a partir do texto livre da dose atual. */
-function nextDoseLabel(dose) {
-  const match = String(dose || "").match(/^(\d+)/);
-  if (match) return `${Number(match[1]) + 1}ª Dose`;
-  return "Próxima dose";
-}
-
 function renderRecords() {
   const listEl = $("#record-list");
   const emptyEl = $("#record-empty");
-  const display = buildDisplayRecords();
+  const byVaccine = buildDisplayRecords().filter((r) => !currentVaccineId || r.vaccineId === currentVaccineId);
 
-  const filtered = display.filter((r) => {
+  const counts = {
+    all: byVaccine.length,
+    past: byVaccine.filter((r) => r.status === "applied").length,
+    pending: byVaccine.filter((r) => r.status === "pending").length,
+  };
+  $$(".filter-chip").forEach((chip) => {
+    chip.classList.toggle("is-active", chip.dataset.filter === currentFilter);
+    const count = chip.querySelector(".filter-chip__count");
+    if (count) count.textContent = counts[chip.dataset.filter] ?? 0;
+  });
+
+  const filtered = byVaccine.filter((r) => {
     if (currentFilter === "past") return r.status === "applied";
     if (currentFilter === "pending") return r.status === "pending";
     return true;
