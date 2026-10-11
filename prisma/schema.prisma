@@ -86,6 +86,8 @@ model VaccineRecord {
   numeroDose      Int       @map("numero_dose")
   dataAplicacao   DateTime  @map("data_aplicacao")
   dataProximaDose DateTime? @map("data_proxima_dose")
+  proximaDose DateTime?
+  updatedAt   DateTime @updatedAt
   lote            String?
   local           String?
   comprovanteUrl  String?   @map("comprovante_url")

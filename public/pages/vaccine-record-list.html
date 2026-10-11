@@ -20,16 +20,13 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <h1 class="topbar__title">Histórico de Vacinas</h1>
-      <button class="icon-btn" onclick="Utils.toast('Filtros avançados em breve.'); return false;" aria-label="Filtrar" type="button">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16M7 12h10M10 19h4"/></svg>
-      </button>
+      <span style="width:36px;"></span>
     </header>
 
     <main class="screen screen--padded" style="padding-top:8px;">
       <div class="list-filters">
         <button class="filter-chip is-active" data-filter="all" type="button">Todas</button>
-        <button class="filter-chip" data-filter="past" type="button">Aplicadas</button>
-        <button class="filter-chip" data-filter="pending" type="button">Pendentes</button>
+        <button class="filter-chip" data-filter="upcoming" type="button">Com próxima dose</button>
       </div>
 
       <div id="record-skeleton">
@@ -45,36 +42,24 @@
         <p class="empty-state__title">Nenhum registro ainda</p>
         <p>Registre sua primeira vacina para começar seu histórico.</p>
       </div>
-
-      <section class="card card--mint" style="margin-top:16px;">
-        <div style="display:flex; align-items:flex-start; gap:14px;">
-          <div class="list-item__icon" style="background:#fff; color:var(--color-primary);">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
-          </div>
-          <div>
-            <p style="font-weight:600; color:var(--color-navy);">Mantenha suas vacinas em dia!</p>
-            <p class="text-muted" style="font-size:13.5px; margin-top:4px;">Ative os lembretes para não esquecer as próximas doses.</p>
-          </div>
-        </div>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="Utils.toast('Configuração de lembretes em breve.')" type="button">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
-          Configurar lembretes
-        </button>
-      </section>
     </main>
 
-    <a class="btn-fab fab-add" href="/vaccine-record-form" aria-label="Registrar nova vacina">
+    <button class="btn-fab fab-add" onclick="window.location.href='vaccine-record-form.html'" aria-label="Registrar nova vacina" type="button">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-    </a>
+    </button>
 
     <nav class="bottom-nav" aria-label="Navegação principal">
+      <div class="nav-brand">
+        <div class="brand-shield brand-shield--nav"><img src="../assets/img/logo.svg" alt="" aria-hidden="true" onerror="this.style.display='none'" /></div>
+        <span class="nav-brand__title">e-Immune</span>
+      </div>
       <a class="bottom-nav__item" href="home.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home
       </a>
       <a class="bottom-nav__item is-active" href="vaccine-record-list.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4h6l1 2h3a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h3z"/><path d="M9 12h6M9 16h6"/></svg>Histórico
       </a>
-      <a class="bottom-nav__item" href="vaccine-list.html">
+      <a class="bottom-nav__item" href="next-doses.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>Vacinas
       </a>
       <a class="bottom-nav__item" href="#" onclick="Utils.toast('Busca de clínicas em breve.'); return false;">

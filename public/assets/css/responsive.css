@@ -46,33 +46,40 @@
 @media (min-width: 1024px) {
   body { background: var(--color-bg-soft); }
 
-  /* ---- Telas internas (com bottom-nav / sidebar) ---- */
+  /* ---- Telas internas (com bottom-nav / sidebar) ----
+     Grid: coluna da sidebar + coluna principal (topbar em cima, conteúdo embaixo) */
   .app-shell--app {
     max-width: var(--container-desktop);
     min-height: 100dvh;
-    display: flex;
-    align-items: flex-start;
-    gap: 24px;
-    padding: 24px 24px 24px 0;
+    display: grid;
+    grid-template-columns: var(--sidenav-w-desktop) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "nav topbar"
+      "nav main";
+    column-gap: 24px;
+    align-items: start;
+    padding: 24px 24px 24px 24px;
+    overflow: visible; /* senão o position: sticky da sidebar não funciona */
     box-shadow: none;
     background: transparent;
   }
 
+  .app-shell--app .topbar { grid-area: topbar; border-radius: var(--radius-lg); position: static; }
   .app-shell--app .screen {
-    flex: 1;
+    grid-area: main;
     min-width: 0;
-    background: var(--color-bg-soft);
+    min-height: 0;
+    background: transparent;
   }
 
   .bottom-nav {
+    grid-area: nav;
     position: sticky;
     top: 24px;
-    order: -1;
-    flex: 0 0 var(--sidenav-w-desktop);
     max-width: none;
-    width: var(--sidenav-w-desktop);
+    width: auto;
     height: calc(100dvh - 48px);
-    margin-left: 24px;
     border-radius: var(--radius-lg);
     flex-direction: column;
     justify-content: flex-start;
@@ -92,6 +99,7 @@
   .nav-brand__title { font-family: var(--font-heading); font-weight: 700; color: var(--color-primary); font-size: 16px; }
 
   .bottom-nav__item {
+    flex: 0 0 auto;
     flex-direction: row;
     justify-content: flex-start;
     gap: 12px;
@@ -106,15 +114,17 @@
   /* ---- Topbar mais espaçosa ---- */
   .topbar {
     height: 76px;
-    padding: 0 40px;
-    border-bottom: 1px solid var(--color-border);
+    padding: 0 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-card);
   }
   .topbar__title { text-align: left; font-size: 22px; margin-right: 0; }
 
   .screen--padded {
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 40px 40px 40px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 8px 0 40px;
   }
 
   .card { padding: 26px; }
@@ -137,7 +147,7 @@
   .home-grid__actions { grid-area: actions; margin-top: 0 !important; }
   .home-grid__nextdose { grid-area: nextdose; margin-top: 24px !important; }
   .home-grid__campaign { grid-area: campaign; margin-top: 24px !important; }
-  .home-grid__actions .quick-actions { grid-template-columns: repeat(2, 1fr); height: 100%; }
+  .home-grid__actions .quick-actions { grid-template-columns: repeat(2, 1fr); }
   .home-greeting { font-size: 26px; }
   .status-row { gap: 28px; }
   .ring { width: 116px; height: 116px; }
