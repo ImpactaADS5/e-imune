@@ -9,7 +9,7 @@
  *                       que a API está no ar e trocar esta flag.
  */
 window.API_CONFIG = {
-  MOCK_MODE: true,
+  MOCK_MODE: false,
   BASE_URL: "/api", // mesma origem do Express (porta 3000). Se a API ficar em outra porta, use a URL completa.
   ENDPOINTS: {
     REGISTER: "/auth/register",

@@ -1,82 +1,125 @@
 import { Request, Response } from "express";
 import * as vaccineRecordService from "./vaccine-record.service";
-import { vaccineRecordSchema } from "../../lib/validation";
-import log, { describeError, sanitizeForLog } from "../../lib/log";
+import { describeError } from "../../lib/log";
+import log from "../../lib/log";
+import { todayISO } from "../../lib/dates";
+import { validateRecordInput } from "../../services/vaccine-record.validation";
+
+function userId(req: Request): string {
+  return req.user!.userId;
+}
+
+function validateBody(body: unknown, res: Response) {
+  const result = validateRecordInput(body, todayISO());
+  if (!result.ok) {
+    res.status(400).json({ error: "Dados inválidos.", errors: result.errors });
+    return null;
+  }
+  return result.value;
+}
 
 export const create = async (req: Request, res: Response) => {
-  log.debug({ requestId: (req as any).requestId, userId: (req as any).user?.userId, body: sanitizeForLog(req.body) }, "VaccineRecordController.create: requisição recebida.");
-  
+  const value = validateBody(req.body, res);
+  if (!value) return;
+
   try {
-    const parsed = vaccineRecordSchema.safeParse(req.body);
-    if (!parsed.success) {
-      log.warn({ requestId: (req as any).requestId, validation: parsed.error.flatten() }, "VaccineRecordController.create: dados inválidos.");
-      return res.status(400).json({ error: "Dados inválidos.", details: parsed.error.flatten() });
-    }
-    
-    if (new Date(parsed.data.dataAplicacao) > new Date()) {
-      log.warn({ requestId: (req as any).requestId, dataAplicacao: parsed.data.dataAplicacao }, "VaccineRecordController.create: data de aplicação futura rejeitada.");
-      return res.status(400).json({ error: "A data da aplicação não pode ser futura." });
-    }
-    
-    if (parsed.data.dataProximaDose && new Date(parsed.data.dataProximaDose) <= new Date(parsed.data.dataAplicacao)) {
-      log.warn({ requestId: (req as any).requestId, dataAplicacao: parsed.data.dataAplicacao, dataProximaDose: parsed.data.dataProximaDose }, "VaccineRecordController.create: intervalo entre doses inválido.");
-      return res.status(400).json({ error: "A próxima dose deve ser posterior à aplicação." });
-    }
-    
-    // Forçar o tipo para evitar conflitos estritos do TypeScript
-    const result = await vaccineRecordService.createVaccineRecord({
-      userId: String((req as any).user!.userId),
-      ...parsed.data
-    } as any);
-    
-    log.info({ requestId: (req as any).requestId, record: sanitizeForLog(result) }, "VaccineRecordController.create: resposta de criação enviada.");
-    res.status(201).json(result);
+    const result = await vaccineRecordService.createVaccineRecord({ userId: userId(req), ...value });
+    return res.status(201).json(result);
   } catch (error) {
-    log.error({ requestId: (req as any).requestId, error: describeError(error) }, "VaccineRecordController.create: erro ao criar registro.");
-    if ((error as { code?: string }).code === "P2003") return res.status(404).json({ error: "Vacina não encontrada." });
-    res.status(500).json({ error: "Erro ao criar registro de vacina" });
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.create: erro ao criar registro.");
+    if (error instanceof vaccineRecordService.InvalidDoseError) {
+      return res.status(400).json({ error: error.message, errors: { dose: error.message } });
+    }
+    if ((error as { code?: string }).code === "P2003") {
+      return res.status(404).json({ error: "Vacina não encontrada." });
+    }
+    return res.status(500).json({ error: "Erro ao criar registro de vacina." });
   }
 };
 
 export const list = async (req: Request, res: Response) => {
-  log.debug({ requestId: (req as any).requestId, userId: (req as any).user?.userId }, "VaccineRecordController.list: requisição recebida.");
   try {
-    const result = await vaccineRecordService.getAllVaccineRecords(String((req as any).user!.userId));
-    log.info({ requestId: (req as any).requestId, userId: (req as any).user?.userId, count: result.length }, "VaccineRecordController.list: registros enviados.");
-    res.status(200).json(result);
+    const records = await vaccineRecordService.getAllVaccineRecords(userId(req));
+    return res.status(200).json(records);
   } catch (error) {
-    log.error({ requestId: (req as any).requestId, error: describeError(error) }, "VaccineRecordController.list: erro ao listar registros.");
-    res.status(500).json({ error: "Erro ao listar registros" });
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.list: erro ao listar registros.");
+    return res.status(500).json({ error: "Erro ao listar registros." });
+  }
+};
+
+export const getById = async (req: Request, res: Response) => {
+  try {
+    const record = await vaccineRecordService.getVaccineRecordById(String(req.params.id), userId(req));
+    if (!record) return res.status(404).json({ error: "Registro não encontrado." });
+    return res.status(200).json(record);
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.getById: erro ao buscar registro.");
+    return res.status(500).json({ error: "Erro ao buscar registro." });
   }
 };
 
 export const update = async (req: Request, res: Response) => {
+  const value = validateBody(req.body, res);
+  if (!value) return;
+
   try {
-    const { id } = req.params;
-    // Forçar os tipos para string e any para contornar a verificação estrita
-    const result = await vaccineRecordService.updateVaccineRecord(id as string, req.body as any);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: "Erro ao atualizar registro", detalhes: error.message });
+    const result = await vaccineRecordService.updateVaccineRecord(
+      String(req.params.id),
+      userId(req),
+      { userId: userId(req), ...value }
+    );
+    if (!result) return res.status(404).json({ error: "Registro não encontrado." });
+    return res.status(200).json(result);
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.update: erro ao atualizar registro.");
+    if (error instanceof vaccineRecordService.InvalidDoseError) {
+      return res.status(400).json({ error: error.message, errors: { dose: error.message } });
+    }
+    if ((error as { code?: string }).code === "P2003") {
+      return res.status(404).json({ error: "Vacina não encontrada." });
+    }
+    return res.status(500).json({ error: "Erro ao atualizar registro." });
+  }
+};
+
+export const summary = async (req: Request, res: Response) => {
+  try {
+    const result = await vaccineRecordService.getVaccineRecordSummary(userId(req));
+    return res.status(200).json(result);
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.summary: erro ao calcular resumo.");
+    return res.status(500).json({ error: "Erro ao calcular o resumo de vacinação." });
+  }
+};
+
+export const nextDosesSummary = async (req: Request, res: Response) => {
+  try {
+    const result = await vaccineRecordService.getNextDoseSummary(userId(req));
+    return res.status(200).json(result);
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.nextDosesSummary: erro ao buscar próximas doses.");
+    return res.status(500).json({ error: "Erro ao buscar próximas doses." });
   }
 };
 
 export const progress = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    const result = await vaccineRecordService.getVaccinationProgress(userId as string);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: "Erro ao calcular progresso", detalhes: error.message });
+    // Mantém a URL antiga, mas sempre usa o usuário autenticado para evitar acesso cruzado.
+    const result = await vaccineRecordService.getVaccinationProgress(userId(req));
+    return res.status(200).json(result);
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.progress: erro ao calcular progresso.");
+    return res.status(500).json({ error: "Erro ao calcular progresso." });
   }
 };
 
 export const nextDoses = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
-    const result = await vaccineRecordService.getNextDoses(userId as string);
-    res.status(200).json(result);
-  } catch (error: any) {
-    res.status(500).json({ error: "Erro ao buscar próximas doses", detalhes: error.message });
+    // Mantém compatibilidade com a tela que ainda envia /next-doses/:userId.
+    const result = await vaccineRecordService.getNextDoses(userId(req));
+    return res.status(200).json(result);
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.nextDoses: erro ao buscar próximas doses.");
+    return res.status(500).json({ error: "Erro ao buscar próximas doses." });
   }
 };

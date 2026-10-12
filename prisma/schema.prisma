@@ -86,12 +86,12 @@ model VaccineRecord {
   numeroDose      Int       @map("numero_dose")
   dataAplicacao   DateTime  @map("data_aplicacao")
   dataProximaDose DateTime? @map("data_proxima_dose")
-  proximaDose DateTime?
-  updatedAt   DateTime @updatedAt
   lote            String?
   local           String?
+  observacoes     String?
   comprovanteUrl  String?   @map("comprovante_url")
   criadoEm        DateTime  @default(now()) @map("criado_em")
+  updatedAt       DateTime  @updatedAt
 
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   vaccine   Vaccine    @relation(fields: [vaccineId], references: [id])

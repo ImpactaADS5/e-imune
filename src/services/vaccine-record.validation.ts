@@ -27,6 +27,19 @@ export function validateRecordInput(body: any, today: string) {
   const vaccineId = clean(b.vaccineId);
   if (!vaccineId) errors.vaccineId = "Selecione a vacina.";
 
+  const dose = clean(b.dose);
+  if (dose && dose.length > 40) {
+    errors.dose = "Máximo de 40 caracteres.";
+  } else if (dose) {
+    const number = dose.match(/\d+/)?.[0];
+    const isSpecialLabel = /reforço|reforco|dose\s+única|dose\s+unica/i.test(dose);
+    if (number && (Number(number) < 1 || Number(number) > 20)) {
+      errors.dose = "O número da dose deve estar entre 1 e 20.";
+    } else if (!number && !isSpecialLabel) {
+      errors.dose = "Informe o número da dose ou use ‘Reforço’.";
+    }
+  }
+
   let dataAplicacao = "";
   if (!b.dataAplicacao) {
     errors.dataAplicacao = "Informe a data da aplicação.";
@@ -54,13 +67,19 @@ export function validateRecordInput(body: any, today: string) {
     errors.observacoes = "Máximo de 200 caracteres.";
   }
 
+  const local = clean(b.local);
+  if (local && local.length > 200) errors.local = "Máximo de 200 caracteres.";
+
+  const lote = clean(b.lote);
+  if (lote && lote.length > 100) errors.lote = "Máximo de 100 caracteres.";
+
   const value: RecordInput = {
     vaccineId: vaccineId ?? "",
-    dose: clean(b.dose),
+    dose,
     dataAplicacao,
     proximaDose,
-    local: clean(b.local),
-    lote: clean(b.lote),
+    local,
+    lote,
     observacoes,
   };
   return { errors, value, ok: Object.keys(errors).length === 0 };

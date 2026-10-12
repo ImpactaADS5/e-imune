@@ -1,15 +1,19 @@
 import { Router } from "express";
 import * as vaccineRecordController from "./vaccine-record.controller";
+import { requireAuth } from "../../middleware/auth";
 
 const router = Router();
 
 // Rotas da AC1
-router.post("/", vaccineRecordController.create);
-router.get("/", vaccineRecordController.list);
+router.post("/", requireAuth, vaccineRecordController.create);
+router.get("/", requireAuth, vaccineRecordController.list);
 
-// Novas rotas da AC2
-router.put("/:id", vaccineRecordController.update);
-router.get("/progress/:userId", vaccineRecordController.progress);
-router.get("/next-doses/:userId", vaccineRecordController.nextDoses);
+// Resumo e próximas doses devem vir antes da rota genérica por ID.
+router.get("/summary", requireAuth, vaccineRecordController.summary);
+router.get("/next-doses", requireAuth, vaccineRecordController.nextDosesSummary);
+router.get("/progress/:userId", requireAuth, vaccineRecordController.progress);
+router.get("/next-doses/:userId", requireAuth, vaccineRecordController.nextDoses);
+router.get("/:id", requireAuth, vaccineRecordController.getById);
+router.put("/:id", requireAuth, vaccineRecordController.update);
 
 export default router;
