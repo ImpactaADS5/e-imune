@@ -76,3 +76,81 @@
   <script src="../assets/js/next-doses.js"></script>
 </body>
 </html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Próximas Doses · e-Immune</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/variables.css" />
+<link rel="stylesheet" href="../assets/css/reset.css" />
+<link rel="stylesheet" href="../assets/css/base.css" />
+<link rel="stylesheet" href="../assets/css/components.css" />
+<link rel="stylesheet" href="../assets/css/responsive.css" />
+<link rel="stylesheet" href="../assets/css/list.css" />
+<link rel="stylesheet" href="../assets/css/next-doses.css" />
+</head>
+<body>
+  <div class="app-shell app-shell--app">
+    <header class="topbar">
+      <button class="icon-btn" onclick="window.location.href='home.html'" aria-label="Voltar" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h1 class="topbar__title">Próximas Doses</h1>
+      <span style="width:36px;"></span>
+    </header>
+
+    <main class="screen screen--padded" style="padding-top:8px;">
+      <div class="nd-summary" id="nd-summary" hidden>
+        <div class="nd-stat nd-stat--alert"><div class="nd-stat__value" id="stat-overdue">0</div><div class="nd-stat__label">Atrasadas</div></div>
+        <div class="nd-stat"><div class="nd-stat__value" id="stat-soon">0</div><div class="nd-stat__label">Nos próximos 7 dias</div></div>
+        <div class="nd-stat"><div class="nd-stat__value" id="stat-total">0</div><div class="nd-stat__label">Total</div></div>
+      </div>
+
+      <div id="nd-skeleton">
+        <div class="skeleton" style="height:110px; margin-bottom:12px;"></div>
+        <div class="skeleton" style="height:110px; margin-bottom:12px;"></div>
+        <div class="skeleton" style="height:110px;"></div>
+      </div>
+
+      <div id="nd-list" hidden></div>
+
+      <div id="nd-empty" class="empty-state" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <p class="empty-state__title">Nenhuma próxima dose registrada</p>
+        <p>Ao registrar uma vacina, informe a "Próxima dose" para acompanhá-la aqui.</p>
+        <a class="btn btn-primary" href="vaccine-record-form.html" style="margin-top:18px; width:auto; display:inline-flex;">Registrar vacina</a>
+      </div>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegação principal">
+      <div class="nav-brand">
+        <div class="brand-shield brand-shield--nav"><img src="../assets/img/logo.svg" alt="" aria-hidden="true" onerror="this.style.display='none'" /></div>
+        <span class="nav-brand__title">e-Immune</span>
+      </div>
+      <a class="bottom-nav__item" href="home.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home
+      </a>
+      <a class="bottom-nav__item" href="vaccine-record-list.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4h6l1 2h3a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h3z"/><path d="M9 12h6M9 16h6"/></svg>Histórico
+      </a>
+      <a class="bottom-nav__item is-active" href="next-doses.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>Vacinas
+      </a>
+      <a class="bottom-nav__item" href="#" onclick="Utils.toast('Busca de clínicas em breve.'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0114 0c0 4.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Clínicas
+      </a>
+      <a class="bottom-nav__item" href="#" onclick="Utils.toast('Perfil em breve.'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Perfil
+      </a>
+    </nav>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/utils.js"></script>
+  <script src="../assets/js/next-doses.js"></script>
+</body>
+</html>

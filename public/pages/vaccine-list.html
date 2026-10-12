@@ -43,18 +43,22 @@
       </div>
     </main>
 
-    <a class="btn-fab fab-add" href="/vaccine-form" aria-label="Cadastrar vacina">
+    <button class="btn-fab fab-add" onclick="window.location.href='vaccine-form.html'" aria-label="Cadastrar vacina" type="button">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-    </a>
+    </button>
 
     <nav class="bottom-nav" aria-label="Navegação principal">
+      <div class="nav-brand">
+        <div class="brand-shield brand-shield--nav"><img src="../assets/img/logo.svg" alt="" aria-hidden="true" onerror="this.style.display='none'" /></div>
+        <span class="nav-brand__title">e-Immune</span>
+      </div>
       <a class="bottom-nav__item" href="home.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home
       </a>
       <a class="bottom-nav__item" href="vaccine-record-list.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4h6l1 2h3a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h3z"/><path d="M9 12h6M9 16h6"/></svg>Histórico
       </a>
-      <a class="bottom-nav__item is-active" href="vaccine-list.html">
+      <a class="bottom-nav__item is-active" href="next-doses.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>Vacinas
       </a>
       <a class="bottom-nav__item" href="#" onclick="Utils.toast('Busca de clínicas em breve.'); return false;">

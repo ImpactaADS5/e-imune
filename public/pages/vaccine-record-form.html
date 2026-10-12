@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Registrar Nova Vacina · e-Immune</title>
+<title id="page-title">Registrar Nova Vacina · e-Immune</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/variables.css" />
@@ -19,7 +19,7 @@
       <button class="icon-btn" onclick="window.location.href='home.html'" aria-label="Voltar" type="button">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <h1 class="topbar__title">Registrar Nova Vacina</h1>
+      <h1 class="topbar__title" id="form-title">Registrar Nova Vacina</h1>
       <button class="icon-btn icon-btn--primary" aria-label="Informações" onclick="Utils.toast('Registros manuais têm finalidade de controle pessoal e não constituem comprovação oficial de vacinação.')">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
       </button>
@@ -42,14 +42,7 @@
           <label for="dose">Dose</label>
           <div class="input-wrapper">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6M15 2v6M4 22V10a2 2 0 012-2h12a2 2 0 012 2v12"/></svg>
-            <input type="number" id="dose" name="dose" min="1" max="20" value="1" required />
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label for="dataProximaDose">Data da próxima dose (opcional)</label>
-          <div class="input-wrapper">
-            <input type="date" id="dataProximaDose" name="dataProximaDose" />
+            <input type="text" id="dose" name="dose" placeholder="Ex.: 1ª Dose, 2ª Dose, Reforço" />
           </div>
         </div>
 
@@ -58,6 +51,15 @@
           <div class="input-wrapper">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
             <input type="date" id="data" name="data" required />
+          </div>
+          <span class="field-error"></span>
+        </div>
+
+        <div class="input-group" id="group-proxima">
+          <label for="proxima">Próxima dose (opcional)</label>
+          <div class="input-wrapper">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+            <input type="date" id="proxima" name="proxima" />
           </div>
           <span class="field-error"></span>
         </div>
@@ -82,6 +84,7 @@
           <label for="observacoes">Observações (opcional)</label>
           <textarea class="input-plain" id="observacoes" name="observacoes" maxlength="200" placeholder="Alguma observação"></textarea>
           <div class="char-counter"><span id="obs-count">0</span>/200</div>
+          <span class="field-error" id="err-observacoes"></span>
         </div>
 
         <button type="submit" class="btn btn-primary" id="btn-save" style="margin-top:8px;">
@@ -92,13 +95,17 @@
     </main>
 
     <nav class="bottom-nav" aria-label="Navegação principal">
+      <div class="nav-brand">
+        <div class="brand-shield brand-shield--nav"><img src="../assets/img/logo.svg" alt="" aria-hidden="true" onerror="this.style.display='none'" /></div>
+        <span class="nav-brand__title">e-Immune</span>
+      </div>
       <a class="bottom-nav__item" href="home.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Home
       </a>
       <a class="bottom-nav__item" href="vaccine-record-list.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4h6l1 2h3a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h3z"/><path d="M9 12h6M9 16h6"/></svg>Histórico
       </a>
-      <a class="bottom-nav__item is-active" href="vaccine-list.html">
+      <a class="bottom-nav__item is-active" href="next-doses.html">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>Vacinas
       </a>
       <a class="bottom-nav__item" href="#" onclick="Utils.toast('Busca de clínicas em breve.'); return false;">

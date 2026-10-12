@@ -8,9 +8,36 @@ const Utils = {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
   },
 
-  /** Converte "DD/MM/AAAA" digitado em <input type=date> nativo — aqui assumimos input type=date (ISO). */
+  /**
+   * "Hoje" no fuso de São Paulo, formato YYYY-MM-DD.
+   * Não usar toISOString(): ele é UTC e, depois das 21h em SP, já devolve o dia
+   * seguinte (deixaria passar uma data futura em "Data da aplicação").
+   */
   todayISO() {
-    return new Date().toISOString().split("T")[0];
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+  },
+
+  /** Dias de calendário entre duas datas YYYY-MM-DD (to - from). */
+  diffDays(fromISO, toISO) {
+    return Math.round((Date.parse(toISO + "T00:00:00Z") - Date.parse(fromISO + "T00:00:00Z")) / 86400000);
+  },
+
+  /** Texto amigável para "dias restantes" (negativo = atrasada). */
+  daysLabel(dias) {
+    if (dias === 0) return "Hoje";
+    if (dias === 1) return "Amanhã";
+    if (dias > 1) return `Em ${dias} dias`;
+    if (dias === -1) return "Atrasada há 1 dia";
+    return `Atrasada há ${Math.abs(dias)} dias`;
+  },
+
+  escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   },
 
   isFutureDate(isoDate) {
@@ -26,8 +53,7 @@ const Utils = {
 
   formatDateBR(isoDate) {
     if (!isoDate) return "—";
-    const [date] = String(isoDate).split("T");
-    const [y, m, d] = date.split("-");
+    const [y, m, d] = isoDate.split("-");
     return `${d}/${m}/${y}`;
   },
 
