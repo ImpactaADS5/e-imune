@@ -25,3 +25,24 @@
 }
 .status-badge--success { background: var(--color-success-bg); color: var(--color-success); }
 .status-badge--pending { background: var(--color-warning-bg); color: var(--color-warning); }
+
+.filter-chip__count { opacity: .75; font-weight: 500; margin-left: 2px; }
+
+.filter-panel { margin-bottom: 16px; }
+.filter-panel__label { display:block; font-size:13px; font-weight:600; color: var(--color-navy); margin-bottom:6px; }
+.filter-panel__select {
+  width:100%; padding:12px 14px; border-radius: var(--radius-md, 12px);
+  border:1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); font-size:14px;
+}
+
+/* Próximas Doses */
+.dose-card { display:flex; justify-content: space-between; align-items:flex-start; gap:12px; }
+.dose-card + .dose-card { margin-top: 12px; }
+.dose-card__title { font-weight:600; color: var(--color-navy); font-size:15.5px; }
+.dose-card__date { margin-top:8px; color: var(--color-navy); font-size:15px; }
+.dose-card__side { display:flex; flex-direction:column; align-items:flex-end; gap:10px; flex-shrink:0; }
+.dose-card__days { font-size:13px; font-weight:600; color: var(--color-text-muted); }
+.status-badge--soon { background: var(--color-warning); color:#fff; }
+.status-badge--scheduled { background:#2563EB; color:#fff; }
+.status-badge--late { background: var(--color-error); color:#fff; }
+.section-title { font-family: var(--font-heading, inherit); font-size:16px; font-weight:700; color: var(--color-navy); margin: 8px 0 12px; }

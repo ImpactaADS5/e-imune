@@ -1,60 +1,77 @@
 /**
- * Próximas Doses — conexão com a API.
- *   GET /vaccine-records/next-doses -> [{ recordId, vaccineId, vaccineNome, doseLabel,
- *                                         dataPrevista, diasRestantes, status }]
- * status: OVERDUE | DUE_SOON | UPCOMING | SCHEDULED (badges)
+ * Tela Próximas Doses (AC2).
+ * Usa GET /vaccine-records/next-doses/:userId (dias restantes calculados no back).
  */
-const STATUS_BADGE = {
-  OVERDUE: { css: "overdue", text: "Atrasada" },
-  DUE_SOON: { css: "due-soon", text: "Esta semana" },
-  UPCOMING: { css: "upcoming", text: "Em breve" },
-  SCHEDULED: { css: "scheduled", text: "Agendada" },
-};
+const SOON_THRESHOLD_DAYS = 30;
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   Utils.requireAuth();
-
-  try {
-    const doses = (await Api.get(window.API_CONFIG.ENDPOINTS.NEXT_DOSES)) || [];
-    renderDoses(doses);
-  } catch (err) {
-    $("#nd-skeleton").hidden = true;
-    Utils.toast(err.message || "Não foi possível carregar as próximas doses.", "error");
-  }
+  initNextDoses();
 });
 
+async function initNextDoses() {
+  const user = Api.getUser();
+  try {
+    const [doses, records] = await Promise.all([
+      Api.get(`${window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS}/next-doses/${user?.id}`),
+      Api.get(window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS),
+    ]);
+
+    // Ignora doses que já foram registradas (ex.: aplicada antes da data prevista)
+    const applied = new Set((records || []).map((r) => `${r.vaccineId}:${r.numeroDose}`));
+    const pending = (doses || []).filter((d) => !applied.has(`${d.vaccineId}:${d.numeroDose + 1}`));
+    renderDoses(pending);
+  } catch (err) {
+    $("#dose-skeleton").hidden = true;
+    Utils.toast(err.message || "Não foi possível carregar as próximas doses.", "error");
+  }
+}
+
+function doseTitle(d) {
+  const next = (d.numeroDose || 0) + 1;
+  const required = d.vaccine?.dosesNecessarias || 1;
+  const label = next > required ? "Reforço" : `Dose ${next}`;
+  return `${d.vaccine?.nome || "Vacina"} – ${label}`;
+}
+
+function doseBadge(dias) {
+  if (dias < 0) return { cls: "late", text: "Atrasada" };
+  if (dias <= SOON_THRESHOLD_DAYS) return { cls: "soon", text: "Em breve" };
+  return { cls: "scheduled", text: "Agendada" };
+}
+
+function daysLabel(dias) {
+  if (dias < 0) return `Atrasada há ${Math.abs(dias)} ${Math.abs(dias) === 1 ? "dia" : "dias"}`;
+  if (dias === 0) return "É hoje";
+  return `${dias === 1 ? "Falta" : "Faltam"} ${dias} ${dias === 1 ? "dia" : "dias"}`;
+}
+
 function renderDoses(doses) {
-  $("#nd-skeleton").hidden = true;
-  $("#nd-list").hidden = doses.length === 0;
-  $("#nd-empty").hidden = doses.length !== 0;
-  $("#nd-summary").hidden = doses.length === 0;
+  const listEl = $("#dose-list");
+  const sorted = [...doses].sort((a, b) => a.diasRestantes - b.diasRestantes);
 
-  $("#stat-overdue").textContent = doses.filter((d) => d.status === "OVERDUE").length;
-  $("#stat-soon").textContent = doses.filter((d) => d.status === "DUE_SOON").length;
-  $("#stat-total").textContent = doses.length;
+  $("#dose-skeleton").hidden = true;
+  listEl.hidden = sorted.length === 0;
+  $("#dose-empty").hidden = sorted.length !== 0;
 
-  $("#nd-list").innerHTML = doses
+  listEl.innerHTML = sorted
     .map((d) => {
-      const badge = STATUS_BADGE[d.status] || STATUS_BADGE.SCHEDULED;
-      // Leva para o registro já preenchido com a vacina e a dose esperada
-      const registerUrl =
-        `vaccine-record-form.html?vaccineId=${encodeURIComponent(d.vaccineId)}` +
-        `&dose=${encodeURIComponent(d.doseLabel)}`;
+      const badge = doseBadge(d.diasRestantes);
       return `
-    <article class="list-item nd-card nd-card--${badge.css}" data-id="${Utils.escapeHtml(d.recordId)}">
-      <div class="list-item__icon">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2l4 4-9 9-5 1 1-5z"/></svg>
+    <div class="card dose-card">
+      <div>
+        <div class="dose-card__title">${escapeHtml(doseTitle(d))}</div>
+        <div class="dose-card__date">${Utils.formatDateBR(d.dataProximaDose)}</div>
       </div>
-      <div class="list-item__body">
-        <div class="nd-card__top">
-          <div class="list-item__title">${Utils.escapeHtml(d.vaccineNome)} – ${Utils.escapeHtml(d.doseLabel)}</div>
-          <span class="badge badge--${badge.css}">${badge.text}</span>
-        </div>
-        <div class="list-item__meta">Previsto para ${Utils.formatDateBR(d.dataPrevista)}</div>
-        <div class="nd-card__days">${Utils.daysLabel(d.diasRestantes)}</div>
-        <a class="btn btn-ghost nd-card__cta" href="${registerUrl}">Registrar dose aplicada</a>
+      <div class="dose-card__side">
+        <span class="status-badge status-badge--${badge.cls}">${badge.text}</span>
+        <span class="dose-card__days">${daysLabel(d.diasRestantes)}</span>
       </div>
-    </article>`;
+    </div>`;
     })
     .join("");
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
 }
