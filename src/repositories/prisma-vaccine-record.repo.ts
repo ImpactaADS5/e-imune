@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from '../lib/prisma';
 import { toDate, toISO } from "../lib/dates";
 import type { RecordRow, VaccineRecordRepo } from "./vaccine-record.repository";
-
-export const prisma = new PrismaClient();
 
 const include = { vaccine: { select: { nome: true } } } as const;
 
