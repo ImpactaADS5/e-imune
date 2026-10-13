@@ -1,4 +1,5 @@
 import { hash } from "bcrypt";
+import { toDate, todayISO } from "../src/lib/dates";
 import { prisma } from "../src/lib/prisma";
 
 const BCRYPT_ROUNDS = 12;
@@ -28,18 +29,16 @@ const IDS = {
   },
 } as const;
 
-function daysAgo(days: number): Date {
-  const date = new Date();
-  date.setUTCHours(12, 0, 0, 0);
-  date.setUTCDate(date.getUTCDate() - days);
+// Mesmo "hoje" (fuso de São Paulo) e mesmo formato de data que a API grava,
+// para os dias restantes baterem com o cenário a qualquer hora do dia.
+function daysFromNow(days: number): Date {
+  const date = toDate(todayISO());
+  date.setUTCDate(date.getUTCDate() + days);
   return date;
 }
 
-function daysFromNow(days: number): Date {
-  const date = new Date();
-  date.setUTCHours(12, 0, 0, 0);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date;
+function daysAgo(days: number): Date {
+  return daysFromNow(-days);
 }
 
 async function clearDevData() {
