@@ -208,17 +208,26 @@ export const getVaccinationProgress = async (userId: string) => {
   };
 };
 
+// URL antiga (/next-doses/:userId): mesmas pendências do /next-doses, no formato de registro.
 export const getNextDoses = async (userId: string) => {
   const today = todayISO();
   const records = await prisma.vaccineRecord.findMany({
-    // Inclui as atrasadas: a tela Próximas Doses mostra o badge "Atrasada" (diasRestantes < 0).
-    where: { userId, dataProximaDose: { not: null } },
+    where: { userId },
     include: { vaccine: { select: { id: true, nome: true, dosesNecessarias: true } } },
     orderBy: { dataProximaDose: "asc" },
   });
+  const pendingIds = new Set(calcNextDoses(records.map(toProgressRecord), today).map((dose) => dose.recordId));
 
-  return records.map((record) => ({
-    ...toApiRecord(record),
-    diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
-  }));
+  return records
+    .filter((record) => pendingIds.has(record.id))
+    .map((record) => ({
+      ...toApiRecord(record),
+      diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
+    }));
+};
+
+export const deleteVaccineRecord = async (id: string, userId: string) => {
+  // Lembretes ligados ao registro ficam com vaccine_record_id nulo (ON DELETE SET NULL).
+  const result = await prisma.vaccineRecord.deleteMany({ where: { id, userId } });
+  return result.count > 0;
 };

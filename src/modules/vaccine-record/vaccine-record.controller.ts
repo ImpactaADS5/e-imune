@@ -82,6 +82,17 @@ export const update = async (req: Request, res: Response) => {
   }
 };
 
+export const remove = async (req: Request, res: Response) => {
+  try {
+    const deleted = await vaccineRecordService.deleteVaccineRecord(String(req.params.id), userId(req));
+    if (!deleted) return res.status(404).json({ error: "Registro não encontrado." });
+    return res.status(204).send();
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.remove: erro ao remover registro.");
+    return res.status(500).json({ error: "Erro ao remover registro." });
+  }
+};
+
 export const summary = async (req: Request, res: Response) => {
   try {
     const result = await vaccineRecordService.getVaccineRecordSummary(userId(req));
