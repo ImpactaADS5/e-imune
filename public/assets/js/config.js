@@ -14,7 +14,7 @@ window.API_CONFIG = {
   ENDPOINTS: {
     REGISTER: "/auth/register",
     LOGIN: "/auth/login",
-    ME: "/users/me",
+    ME: "/auth/me",
     VACCINES: "/vaccines",
     VACCINE_RECORDS: "/vaccine-records",
     VACCINE_RECORDS_SUMMARY: "/vaccine-records/summary",
