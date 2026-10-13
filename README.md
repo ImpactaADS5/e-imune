@@ -52,6 +52,7 @@ Contas do seed:
 | `npm run build` | Compila TypeScript |
 | `npm run db:setup` | generate + migrate + seed |
 | `npm run db:studio` | Prisma Studio |
+| `npm test` | Testes (precisa do banco no ar) |
 
 No código, o banco entra só por `src/lib/prisma.ts`:
 

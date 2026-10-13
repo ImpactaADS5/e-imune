@@ -1,4 +1,5 @@
 import { hash } from "bcrypt";
+import { toDate, todayISO } from "../src/lib/dates";
 import { prisma } from "../src/lib/prisma";
 
 const BCRYPT_ROUNDS = 12;
@@ -28,18 +29,16 @@ const IDS = {
   },
 } as const;
 
-function daysAgo(days: number): Date {
-  const date = new Date();
-  date.setUTCHours(12, 0, 0, 0);
-  date.setUTCDate(date.getUTCDate() - days);
+// Mesmo "hoje" (fuso de São Paulo) e mesmo formato de data que a API grava,
+// para os dias restantes baterem com o cenário a qualquer hora do dia.
+function daysFromNow(days: number): Date {
+  const date = toDate(todayISO());
+  date.setUTCDate(date.getUTCDate() + days);
   return date;
 }
 
-function daysFromNow(days: number): Date {
-  const date = new Date();
-  date.setUTCHours(12, 0, 0, 0);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date;
+function daysAgo(days: number): Date {
+  return daysFromNow(-days);
 }
 
 async function clearDevData() {
@@ -150,8 +149,8 @@ async function seedCampaigns() {
       titulo: "Campanha Nacional de Influenza 2026",
       descricao: "Vacinação contra a gripe para grupos prioritários na capital.",
       destaque: true,
-      dataInicio: new Date("2026-04-01T00:00:00.000Z"),
-      dataFim: new Date("2026-07-31T23:59:59.000Z"),
+      dataInicio: daysAgo(30),
+      dataFim: daysFromNow(60),
       vaccines: {
         create: [{ vaccineId: IDS.vaccines.influenza }],
       },
@@ -164,8 +163,8 @@ async function seedCampaigns() {
       titulo: "Multivacinação infantil",
       descricao: "Atualização da caderneta: Tríplice Viral, Hepatite B e Febre Amarela.",
       destaque: false,
-      dataInicio: new Date("2026-03-01T00:00:00.000Z"),
-      dataFim: new Date("2026-12-15T23:59:59.000Z"),
+      dataInicio: daysAgo(120),
+      dataFim: daysFromNow(90),
       vaccines: {
         create: [
           { vaccineId: IDS.vaccines.triplice },
@@ -182,8 +181,8 @@ async function seedCampaigns() {
       titulo: "HPV nas escolas",
       descricao: "Vacinação de adolescentes em unidades da rede municipal.",
       destaque: false,
-      dataInicio: new Date("2026-02-15T00:00:00.000Z"),
-      dataFim: new Date("2026-11-30T23:59:59.000Z"),
+      dataInicio: daysAgo(150),
+      dataFim: daysFromNow(45),
       vaccines: {
         create: [{ vaccineId: IDS.vaccines.hpv }],
       },
@@ -259,7 +258,12 @@ async function seedClinics() {
 }
 
 async function seedRecords(userId: string) {
-  // 2 séries completas, 1 atrasada, 1 próxima — cenário do S3a.
+  // Cenário da AC2 (Home, Histórico e Próximas Doses). 7 de 11 doses do catálogo = 64%.
+  //   completas ......... Influenza, Febre Amarela
+  //   atrasada .......... Hepatite B (dose 3 venceu há 20 dias; a pendência da dose 2 já foi resolvida)
+  //   em até 7 dias ..... Tríplice Viral (dose 2 em 5 dias)
+  //   em até 30 dias .... COVID-19 (dose 2 em 18 dias)
+  //   agendada .......... HPV (dose 2 em 120 dias)
   await prisma.vaccineRecord.createMany({
     data: [
       {
@@ -270,6 +274,7 @@ async function seedRecords(userId: string) {
         dataProximaDose: null,
         lote: "FLU26A01",
         local: "Hospital das Clínicas — Centro de Imunização",
+        observacoes: "Dose anual da campanha de gripe.",
       },
       {
         userId,
@@ -284,10 +289,29 @@ async function seedRecords(userId: string) {
         userId,
         vaccineId: IDS.vaccines.hepatiteB,
         numeroDose: 1,
-        dataAplicacao: daysAgo(90),
-        dataProximaDose: daysAgo(60),
+        dataAplicacao: daysAgo(120),
+        dataProximaDose: daysAgo(90),
         lote: "HBV25C08",
         local: "Santa Casa de Misericórdia de São Paulo",
+      },
+      {
+        userId,
+        vaccineId: IDS.vaccines.hepatiteB,
+        numeroDose: 2,
+        dataAplicacao: daysAgo(88),
+        dataProximaDose: daysAgo(20),
+        lote: "HBV25C19",
+        local: "Santa Casa de Misericórdia de São Paulo",
+        observacoes: "Segunda dose aplicada com 2 dias de atraso.",
+      },
+      {
+        userId,
+        vaccineId: IDS.vaccines.triplice,
+        numeroDose: 1,
+        dataAplicacao: daysAgo(25),
+        dataProximaDose: daysFromNow(5),
+        lote: "SCR26D04",
+        local: "Hospital das Clínicas — Centro de Imunização",
       },
       {
         userId,
@@ -297,6 +321,15 @@ async function seedRecords(userId: string) {
         dataProximaDose: daysFromNow(18),
         lote: "PZ2603X",
         local: "Hospital São Paulo — UNIFESP",
+      },
+      {
+        userId,
+        vaccineId: IDS.vaccines.hpv,
+        numeroDose: 1,
+        dataAplicacao: daysAgo(60),
+        dataProximaDose: daysFromNow(120),
+        lote: "HPV26E11",
+        local: "Hospital Israelita Albert Einstein",
       },
     ],
   });
@@ -313,7 +346,7 @@ async function main() {
   console.log("Seed ok:");
   console.log(`  admin  ${admin.email} / Admin123!`);
   console.log(`  user   ${user.email} / User123!`);
-  console.log("  6 vacinas, 3 campanhas, 5 clínicas, 4 registros do user");
+  console.log("  6 vacinas, 3 campanhas, 5 clínicas, 7 registros do user");
 }
 
 main()

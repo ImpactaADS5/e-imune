@@ -1,4 +1,4 @@
-# ERD — e-imune (S0)
+# ERD — e-imune (S0 + AC2)
 
 Documentação completa: [docs/banco-de-dados.md](../docs/banco-de-dados.md).
 
@@ -16,6 +16,20 @@ erDiagram
   VaccineRecord ||--o{ Reminder : has
   Vaccine ||--o{ CampaignVaccines : has
   Campaign ||--o{ CampaignVaccines : has
+  VaccineRecord {
+    string id
+    string user_id
+    string vaccine_id
+    int numero_dose
+    datetime data_aplicacao
+    datetime data_proxima_dose
+    string lote
+    string local
+    string observacoes
+    string comprovante_url
+    datetime criado_em
+    datetime atualizado_em
+  }
   Clinic {
     string id
     string nome
@@ -23,6 +37,8 @@ erDiagram
     float longitude
   }
 ```
+
+AC2: `VaccineRecord` ganhou `observacoes` e `atualizado_em`.
 
 ## Tabelas
 

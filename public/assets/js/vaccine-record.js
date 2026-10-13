@@ -65,6 +65,9 @@ async function initRecordForm() {
       else if (field === "observacoes") {
         errObs.textContent = message;
         errObs.classList.add("is-visible");
+      } else {
+        // Campo sem área de erro própria (ex.: dose)
+        Utils.toast(message, "error");
       }
     });
   }
@@ -261,6 +264,7 @@ function buildDisplayRecords() {
       vaccineNome,
       dose: doseLabel(r.numeroDose, vaccine),
       date: r.dataAplicacao,
+      local: r.local,
       status: "applied",
     });
 
@@ -316,8 +320,9 @@ function renderRecords() {
       </div>
       <div class="list-item__body">
         <div class="list-item__title">${Utils.escapeHtml(r.vaccineNome || r.nomeVacina || "Vacina")}${r.dose ? " · " + Utils.escapeHtml(r.dose) : ""}</div>
-        <div class="list-item__meta">${Utils.formatDateBR(r.dataAplicacao)}${r.local ? " · " + Utils.escapeHtml(r.local) : ""}</div>
+        <div class="list-item__meta">${r.status === "pending" ? "Prevista para " : ""}${Utils.formatDateBR(r.date)}${r.local ? " · " + Utils.escapeHtml(r.local) : ""}</div>
       </div>
+      ${r.status === "pending" ? `<span class="status-badge status-badge--pending">Pendente</span>` : `
       <div class="list-item__actions">
         <a class="icon-btn" aria-label="Editar registro" href="vaccine-record-form.html?id=${encodeURIComponent(r.id)}">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
@@ -325,7 +330,7 @@ function renderRecords() {
         <button class="icon-btn icon-btn--danger" aria-label="Excluir registro" data-delete="${Utils.escapeHtml(r.id)}" type="button">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>
         </button>
-      </div>
+      </div>`}
     </div>`
     )
     .join("");

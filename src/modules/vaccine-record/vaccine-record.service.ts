@@ -197,54 +197,31 @@ export const getNextDoseSummary = async (userId: string) => {
   return calcNextDoses(recordRows, todayISO());
 };
 
+// URL antiga (/progress/:userId): mesma regra do /summary, só muda o formato da resposta.
 export const getVaccinationProgress = async (userId: string) => {
-  const records = await prisma.vaccineRecord.findMany({
-    where: { userId },
-    include: { vaccine: { select: { nome: true, dosesNecessarias: true } } },
-  });
-
-  const progressMap = new Map<string, { taken: number; required: number }>();
-  records.forEach((record) => {
-    const current = progressMap.get(record.vaccineId);
-    if (!current) {
-      progressMap.set(record.vaccineId, {
-        taken: record.numeroDose,
-        required: record.vaccine.dosesNecessarias,
-      });
-    } else if (record.numeroDose > current.taken) {
-      current.taken = record.numeroDose;
-    }
-  });
-
-  let totalRequired = 0;
-  let totalTaken = 0;
-  progressMap.forEach((progress) => {
-    totalRequired += progress.required;
-    totalTaken += Math.min(progress.taken, progress.required);
-  });
-
-  const percentage = totalRequired === 0 ? 0 : Math.round((totalTaken / totalRequired) * 100);
+  const { percent, appliedDoses, expectedDoses } = await getVaccineRecordSummary(userId);
   return {
-    totalTaken,
-    totalRequired,
-    percentage,
-    status: totalRequired === 0 ? "Nenhuma vacina registrada" : percentage >= 100 ? "Completo" : "Em andamento",
+    totalTaken: appliedDoses,
+    totalRequired: expectedDoses,
+    percentage: percent,
+    status: appliedDoses === 0 ? "Nenhuma vacina registrada" : percent >= 100 ? "Completo" : "Em andamento",
   };
 };
 
+// URL antiga (/next-doses/:userId): mesmas pendências do /next-doses, no formato de registro.
 export const getNextDoses = async (userId: string) => {
   const today = todayISO();
   const records = await prisma.vaccineRecord.findMany({
-    where: {
-      userId,
-      dataProximaDose: { not: null, gte: toDate(today) },
-    },
+    where: { userId },
     include: { vaccine: { select: { id: true, nome: true, dosesNecessarias: true } } },
     orderBy: { dataProximaDose: "asc" },
   });
+  const pendingIds = new Set(calcNextDoses(records.map(toProgressRecord), today).map((dose) => dose.recordId));
 
-  return records.map((record) => ({
-    ...toApiRecord(record),
-    diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
-  }));
+  return records
+    .filter((record) => pendingIds.has(record.id))
+    .map((record) => ({
+      ...toApiRecord(record),
+      diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
+    }));
 };
