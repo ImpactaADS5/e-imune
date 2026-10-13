@@ -225,9 +225,3 @@ export const getNextDoses = async (userId: string) => {
       diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
     }));
 };
-
-export const deleteVaccineRecord = async (id: string, userId: string) => {
-  // Lembretes ligados ao registro ficam com vaccine_record_id nulo (ON DELETE SET NULL).
-  const result = await prisma.vaccineRecord.deleteMany({ where: { id, userId } });
-  return result.count > 0;
-};

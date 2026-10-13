@@ -15,6 +15,5 @@ router.get("/progress/:userId", requireAuth, vaccineRecordController.progress);
 router.get("/next-doses/:userId", requireAuth, vaccineRecordController.nextDoses);
 router.get("/:id", requireAuth, vaccineRecordController.getById);
 router.put("/:id", requireAuth, vaccineRecordController.update);
-router.delete("/:id", requireAuth, vaccineRecordController.remove);
 
 export default router;

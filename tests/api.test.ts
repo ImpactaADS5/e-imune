@@ -133,11 +133,3 @@ test("PUT com vacina inexistente -> 404; registro de outro usuário -> 404", asy
   const b = await put(`/vaccine-records/${r1}`, u2, { vaccineId: v1, dataAplicacao: "2026-03-01" });
   assert.equal(b.status, 404);
 });
-
-test("DELETE /:id: outro usuário recebe 404; dono remove e o registro some", async () => {
-  const del = (user: TestUser) => fetch(`${api.baseUrl}/vaccine-records/${r1}`, { method: "DELETE", headers: user.headers });
-  assert.equal((await del(u2)).status, 404);
-  assert.equal((await del(u1)).status, 204);
-  assert.equal((await get(`/vaccine-records/${r1}`, u1)).status, 404);
-  assert.equal((await del(u1)).status, 404);
-});
