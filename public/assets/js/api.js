@@ -81,8 +81,15 @@ const Api = (() => {
      acima) quando não precisar mais do modo de demonstração.
      ====================================================================== */
   const MOCK_DELAY = 350;
-  const SEED_VERSION = "v2";
-  const DB_KEYS = { VACCINES: "eimmune_mock_vaccines", RECORDS: "eimmune_mock_records", SEEDED: "eimmune_mock_seeded" };
+  const SEED_VERSION = "v3";
+  const DB_KEYS = {
+    VACCINES: "eimmune_mock_vaccines",
+    RECORDS: "eimmune_mock_records",
+    REMINDERS: "eimmune_mock_reminders",
+    CAMPAIGNS: "eimmune_mock_campaigns",
+    CLINICS: "eimmune_mock_clinics",
+    SEEDED: "eimmune_mock_seeded",
+  };
 
   function delay(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -150,6 +157,29 @@ const Api = (() => {
       { id: "r4", vaccineId: "v4", vaccineNome: "Dupla Adulto (dT)", dose: "2ª Dose",
         dataAplicacao: addDays(t, -300), proximaDose: addDays(t, 200),
         local: null, lote: null, observacoes: null },
+    ]);
+
+    // m1: AGENDADO (próxima dose de r1 em 4 dias, avisa 1 dia antes)
+    // m2: PENDENTE (r3 está atrasada, então o aviso já deveria ter disparado)
+    writeDb(DB_KEYS.REMINDERS, [
+      { id: "m1", vaccineRecordId: "r1", ativo: true, antecedenciaDias: 1, horario: "09:00", ackedFor: null },
+      { id: "m2", vaccineRecordId: "r3", ativo: true, antecedenciaDias: 3, horario: "08:00", ackedFor: null },
+    ]);
+
+    writeDb(DB_KEYS.CAMPAIGNS, [
+      { id: "c1", titulo: "Campanha de Influenza (exemplo)", descricao: "Dados de teste: vacinação contra gripe para grupos prioritários.",
+        publicoAlvo: "Idosos e crianças", inicio: addDays(t, -10), fim: addDays(t, 20), destaque: true },
+      { id: "c2", titulo: "Multivacinação (exemplo)", descricao: "Dados de teste: atualização da caderneta de vacinação.",
+        publicoAlvo: "Crianças e adolescentes", inicio: addDays(t, -2), fim: addDays(t, 5), destaque: true },
+      { id: "c3", titulo: "Campanha antiga (exemplo)", descricao: "Dados de teste: já terminou, não aparece no destaque.",
+        publicoAlvo: null, inicio: addDays(t, -60), fim: addDays(t, -30), destaque: true },
+    ]);
+
+    // Coordenadas em torno de Taboão da Serra/SP. Nomes e telefones são de teste.
+    writeDb(DB_KEYS.CLINICS, [
+      { id: "k1", nome: "Clínica Exemplo Centro (teste)", endereco: "Rua Exemplo, 100", cidade: "Taboão da Serra", uf: "SP", telefone: "(11) 0000-0001", latitude: -23.6086, longitude: -46.7917 },
+      { id: "k2", nome: "UBS Exemplo Jardim (teste)", endereco: "Av. Exemplo, 200", cidade: "Taboão da Serra", uf: "SP", telefone: "(11) 0000-0002", latitude: -23.6275, longitude: -46.7701 },
+      { id: "k3", nome: "Clínica Exemplo São Paulo (teste)", endereco: "Rua Exemplo, 300", cidade: "São Paulo", uf: "SP", telefone: null, latitude: -23.5505, longitude: -46.6333 },
     ]);
 
     localStorage.setItem(DB_KEYS.SEEDED, SEED_VERSION);
@@ -244,9 +274,72 @@ const Api = (() => {
     };
   }
 
-  async function mockRequest(path, method, body) {
+
+  /* ---- Lembretes (espelho de reminder.service / reminder.validation) ---- */
+  const SP_OFFSET = "-03:00"; // Brasil sem horário de verão desde 2019
+
+  function calcDisparoEm(proximaDose, antecedenciaDias, horario) {
+    return `${addDays(proximaDose, -antecedenciaDias)}T${horario}:00${SP_OFFSET}`;
+  }
+
+  /** Junta o lembrete com os dados do registro e calcula disparo e status. */
+  function toReminderView(rem, records) {
+    const rec = records.find((r) => r.id === rem.vaccineRecordId);
+    const proximaDose = rec ? rec.proximaDose : null;
+    const disparoEm = proximaDose ? calcDisparoEm(proximaDose, rem.antecedenciaDias, rem.horario) : null;
+    let status;
+    if (!rem.ativo) status = "DESATIVADO";
+    else if (!disparoEm) status = "SEM_DATA";
+    else if (rem.ackedFor === disparoEm) status = "LIDO";
+    else if (Date.parse(disparoEm) <= Date.now()) status = "PENDENTE";
+    else status = "AGENDADO";
+    return {
+      id: rem.id, vaccineRecordId: rem.vaccineRecordId,
+      vaccineNome: rec ? rec.vaccineNome : "",
+      doseLabel: nextDoseLabel(rec ? rec.dose : null),
+      dataPrevista: proximaDose, ativo: rem.ativo,
+      antecedenciaDias: rem.antecedenciaDias, horario: rem.horario, disparoEm, status,
+    };
+  }
+
+  function readReminderFields(b, errors) {
+    const value = {};
+    if (b.ativo !== undefined) {
+      if (typeof b.ativo === "boolean") value.ativo = b.ativo;
+      else errors.ativo = "Informe se o lembrete está ativo (true ou false).";
+    }
+    if (b.antecedenciaDias !== undefined) {
+      const raw = typeof b.antecedenciaDias === "string" && /^\d+$/.test(b.antecedenciaDias.trim())
+        ? Number(b.antecedenciaDias) : b.antecedenciaDias;
+      if (Number.isInteger(raw) && raw >= 0 && raw <= 30) value.antecedenciaDias = raw;
+      else errors.antecedenciaDias = "A antecedência deve ser um número inteiro de 0 a 30 dias.";
+    }
+    if (b.horario !== undefined) {
+      if (typeof b.horario === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(b.horario)) value.horario = b.horario;
+      else errors.horario = "Horário inválido. Use o formato HH:mm (ex.: 09:00).";
+    }
+    return value;
+  }
+
+  /* ---- Campanhas e clínicas ---- */
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    const rad = (d) => (d * Math.PI) / 180;
+    const dLat = rad(lat2 - lat1), dLng = rad(lng2 - lng1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
+  }
+
+  function numParam(v) {
+    return v === undefined || v === "" ? undefined : Number(v);
+  }
+
+  async function mockRequest(fullPath, method, body) {
     seedIfNeeded();
     await delay(MOCK_DELAY);
+
+    // separa "/caminho?a=1&b=2" em caminho + parâmetros
+    const [path, queryString = ""] = fullPath.split("?");
+    const query = Object.fromEntries(new URLSearchParams(queryString));
 
     // ---- Autenticação -----------------------------------------------
     if (path === "/auth/login" && method === "POST") {
@@ -324,12 +417,132 @@ const Api = (() => {
         return records[index];
       }
       if (method === "DELETE") {
+        // mesma regra do back-end: os lembretes do registro saem junto (FK)
+        const reminders = readDb(DB_KEYS.REMINDERS);
+        const remaining = reminders.filter((m) => m.vaccineRecordId !== id);
+        writeDb(DB_KEYS.REMINDERS, remaining);
         writeDb(DB_KEYS.RECORDS, records.filter((r) => r.id !== id));
-        return { success: true };
+        return { deleted: true, removedReminders: reminders.length - remaining.length };
       }
     }
 
-    throw new ApiError(`Rota mock não implementada: ${method} ${path}`, 404);
+    // ---- Lembretes ----------------------------------------------------
+    // ATENÇÃO: /due vem ANTES de /:id (mesma ordem do back-end)
+    if (path === "/reminders" && method === "GET") {
+      const records = readDb(DB_KEYS.RECORDS);
+      return readDb(DB_KEYS.REMINDERS).map((m) => toReminderView(m, records));
+    }
+    if (path === "/reminders/due" && method === "GET") {
+      const records = readDb(DB_KEYS.RECORDS);
+      return readDb(DB_KEYS.REMINDERS)
+        .map((m) => toReminderView(m, records))
+        .filter((v) => v.status === "PENDENTE")
+        .sort((a, b) => a.disparoEm.localeCompare(b.disparoEm));
+    }
+    if (path === "/reminders" && method === "POST") {
+      const b = body || {};
+      const errors = {};
+      const vaccineRecordId = typeof b.vaccineRecordId === "string" ? b.vaccineRecordId.trim() : "";
+      if (!vaccineRecordId) errors.vaccineRecordId = "Selecione o registro de vacina.";
+      const fields = readReminderFields(b, errors);
+      if (Object.keys(errors).length) throw new ApiError("Dados inválidos.", 400, { errors });
+
+      const records = readDb(DB_KEYS.RECORDS);
+      const rec = records.find((r) => r.id === vaccineRecordId);
+      if (!rec) throw new ApiError("Registro não encontrado.", 404);
+      if (!rec.proximaDose) {
+        throw new ApiError("Dados inválidos.", 400, {
+          errors: { vaccineRecordId: "Este registro não tem data de próxima dose. Edite o registro e informe a data." },
+        });
+      }
+      const reminders = readDb(DB_KEYS.REMINDERS);
+      if (reminders.some((m) => m.vaccineRecordId === vaccineRecordId)) {
+        throw new ApiError("Já existe um lembrete para este registro.", 409);
+      }
+      const created = { id: uid(), vaccineRecordId, ativo: true, antecedenciaDias: 1, horario: "09:00", ackedFor: null, ...fields };
+      reminders.push(created);
+      writeDb(DB_KEYS.REMINDERS, reminders);
+      return toReminderView(created, records);
+    }
+    const reminderAckMatch = path.match(/^\/reminders\/([^/]+)\/ack$/);
+    if (reminderAckMatch && method === "POST") {
+      const reminders = readDb(DB_KEYS.REMINDERS);
+      const rem = reminders.find((m) => m.id === reminderAckMatch[1]);
+      if (!rem) throw new ApiError("Lembrete não encontrado.", 404);
+      const records = readDb(DB_KEYS.RECORDS);
+      const view = toReminderView(rem, records);
+      if (!view.disparoEm) throw new ApiError("Este lembrete não tem data de disparo.", 400);
+      rem.ackedFor = view.disparoEm;
+      writeDb(DB_KEYS.REMINDERS, reminders);
+      return toReminderView(rem, records);
+    }
+    const reminderIdMatch = path.match(/^\/reminders\/([^/]+)$/);
+    if (reminderIdMatch) {
+      const id = reminderIdMatch[1];
+      const reminders = readDb(DB_KEYS.REMINDERS);
+      const index = reminders.findIndex((m) => m.id === id);
+      if (index === -1) throw new ApiError("Lembrete não encontrado.", 404);
+      const records = readDb(DB_KEYS.RECORDS);
+
+      if (method === "GET") return toReminderView(reminders[index], records);
+      if (method === "PUT") {
+        const errors = {};
+        const value = readReminderFields(body || {}, errors);
+        if (!Object.keys(errors).length && !Object.keys(value).length) {
+          errors._ = "Informe ao menos um campo para atualizar (ativo, antecedenciaDias ou horario).";
+        }
+        if (Object.keys(errors).length) throw new ApiError(errors._ || "Dados inválidos.", 400, { errors });
+        Object.assign(reminders[index], value);
+        writeDb(DB_KEYS.REMINDERS, reminders);
+        return toReminderView(reminders[index], records);
+      }
+      if (method === "DELETE") {
+        writeDb(DB_KEYS.REMINDERS, reminders.filter((m) => m.id !== id));
+        return null; // o back-end responde 204 (sem corpo)
+      }
+    }
+
+    // ---- Campanhas em destaque ---------------------------------------
+    if (path === "/campaigns/featured" && method === "GET") {
+      let limit = 5;
+      if (query.limit !== undefined && query.limit !== "") {
+        limit = Number(query.limit);
+        if (!Number.isInteger(limit) || limit < 1 || limit > 10) {
+          const msg = "O limite deve ser um inteiro de 1 a 10.";
+          throw new ApiError(msg, 400, { message: msg, errors: { limit: msg } });
+        }
+      }
+      const today = mockToday();
+      return readDb(DB_KEYS.CAMPAIGNS)
+        .filter((c) => c.destaque && c.inicio <= today && c.fim >= today)
+        .map((c) => ({ ...c, diasRestantes: diffDays(today, c.fim) }))
+        .sort((a, b) => a.fim.localeCompare(b.fim) || a.inicio.localeCompare(b.inicio))
+        .slice(0, limit);
+    }
+
+    // ---- Clínicas próximas -------------------------------------------
+    if (path === "/clinics/nearby" && method === "GET") {
+      const errors = {};
+      const lat = numParam(query.lat), lng = numParam(query.lng);
+      const raio = numParam(query.raio), limit = numParam(query.limit);
+      if (lat === undefined) errors.lat = "Informe a latitude.";
+      else if (!Number.isFinite(lat) || lat < -90 || lat > 90) errors.lat = "Latitude inválida (de -90 a 90).";
+      if (lng === undefined) errors.lng = "Informe a longitude.";
+      else if (!Number.isFinite(lng) || lng < -180 || lng > 180) errors.lng = "Longitude inválida (de -180 a 180).";
+      if (raio !== undefined && (!Number.isFinite(raio) || raio <= 0 || raio > 100)) errors.raio = "O raio deve ser maior que 0 e no máximo 100 km.";
+      if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 50)) errors.limit = "O limite deve ser um inteiro de 1 a 50.";
+      if (Object.keys(errors).length) throw new ApiError("Parâmetros inválidos.", 400, { message: "Parâmetros inválidos.", errors });
+
+      const radius = raio === undefined ? 10 : raio;
+      return readDb(DB_KEYS.CLINICS)
+        .map((c) => ({ ...c, d: haversineKm(lat, lng, c.latitude, c.longitude) }))
+        .filter((c) => c.d <= radius)
+        .sort((a, b) => a.d - b.d)
+        .slice(0, limit === undefined ? 10 : limit)
+        .map(({ d, ...c }) => ({ ...c, distanciaKm: Math.round(d * 10) / 10 }));
+    }
+
+    throw new ApiError(`Rota mock não implementada: ${method} ${fullPath}`, 404);
   }
 
   return {

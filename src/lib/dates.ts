@@ -29,3 +29,10 @@ export function diffDays(fromISO: string, toISO: string): number {
 
 export const toDate = (iso: string): Date => new Date(`${iso}T00:00:00.000Z`);
 export const toISO = (d: Date): string => d.toISOString().slice(0, 10);
+
+/** Soma (ou subtrai, com n negativo) dias de calendário a uma data YYYY-MM-DD. */
+export function addDays(iso: string, n: number): string {
+  const d = toDate(iso);
+  d.setUTCDate(d.getUTCDate() + n);
+  return toISO(d);
+}

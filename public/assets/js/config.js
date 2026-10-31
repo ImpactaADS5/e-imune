@@ -9,16 +9,20 @@
  *                       que a API está no ar e trocar esta flag.
  */
 window.API_CONFIG = {
-  MOCK_MODE: false,
+  MOCK_MODE: true,
   BASE_URL: "/api", // mesma origem do Express (porta 3000). Se a API ficar em outra porta, use a URL completa.
   ENDPOINTS: {
     REGISTER: "/auth/register",
     LOGIN: "/auth/login",
-    ME: "/auth/me",
+    ME: "/users/me",
     VACCINES: "/vaccines",
     VACCINE_RECORDS: "/vaccine-records",
     VACCINE_RECORDS_SUMMARY: "/vaccine-records/summary",
     NEXT_DOSES: "/vaccine-records/next-doses",
+    REMINDERS: "/reminders",
+    REMINDERS_DUE: "/reminders/due",
+    CAMPAIGNS_FEATURED: "/campaigns/featured",
+    CLINICS_NEARBY: "/clinics/nearby",
   },
   STORAGE_KEYS: {
     TOKEN: "eimmune_token",

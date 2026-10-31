@@ -1,0 +1,97 @@
+// Schema de referência para a sprint (provider sqlite só para teste local).
+// No projeto real, mantenha o "provider" e a "url" que o time de back já usa.
+// Sprint 1: acrescentou `proximaDose` e `updatedAt` em VaccineRecord.
+// Sprint 2 (PH): acrescenta os models Reminder, Campaign e Clinic e as 2 linhas
+// `reminders Reminder[]` (em User e em VaccineRecord). Veja docs/INTEGRACAO-PH.md.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             String          @id @default(uuid())
+  nome           String
+  email          String          @unique
+  dataNascimento DateTime
+  senha          String
+  createdAt      DateTime        @default(now())
+  records        VaccineRecord[]
+  reminders      Reminder[]
+}
+
+model Vaccine {
+  id                String          @id @default(uuid())
+  nome              String
+  fabricante        String?
+  dosesRecomendadas Int?
+  records           VaccineRecord[]
+}
+
+model VaccineRecord {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  vaccineId     String
+  vaccine       Vaccine  @relation(fields: [vaccineId], references: [id])
+  dose          String?
+  dataAplicacao DateTime
+  proximaDose   DateTime? // NOVO: data prevista da próxima dose (opcional)
+  local         String?
+  lote          String?
+  observacoes   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  reminders     Reminder[]
+
+  @@index([userId, vaccineId])
+}
+
+// Lembrete da próxima dose de UM registro (um lembrete por registro).
+// A data de disparo NÃO é gravada: é calculada (proximaDose - antecedenciaDias, às `horario`),
+// então editar a próxima dose do registro já reagenda o lembrete.
+model Reminder {
+  id               String        @id @default(uuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vaccineRecordId  String        @unique
+  // Cascade: ao apagar o registro, o banco apaga o lembrete (evita erro de FK, P2003)
+  vaccineRecord    VaccineRecord @relation(fields: [vaccineRecordId], references: [id], onDelete: Cascade)
+  ativo            Boolean       @default(true)
+  antecedenciaDias Int           @default(1)
+  horario          String        @default("09:00") // HH:mm, horário de São Paulo
+  ackedFor         String? // disparo que o usuário já viu (ex.: "2026-11-09T09:00:00-03:00")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([userId])
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  titulo      String
+  descricao   String
+  publicoAlvo String?
+  inicio      DateTime // só o dia
+  fim         DateTime // último dia, inclusive
+  destaque    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([destaque, fim])
+}
+
+model Clinic {
+  id        String  @id @default(uuid())
+  nome      String
+  endereco  String
+  cidade    String
+  uf        String
+  telefone  String?
+  latitude  Float
+  longitude Float
+
+  @@index([latitude, longitude])
+}

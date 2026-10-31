@@ -36,6 +36,31 @@ const Utils = {
     return `Atrasada há ${Math.abs(dias)} dias`;
   },
 
+  /**
+   * Localização do usuário (para "clínicas próximas").
+   * Devolve { lat, lng } ou rejeita com uma mensagem pronta para mostrar na tela.
+   * O navegador só libera a localização em HTTPS ou em localhost.
+   */
+  getPosition() {
+    return new Promise((resolve, reject) => {
+      if (!("geolocation" in navigator)) {
+        return reject(new Error("Seu navegador não permite obter a localização."));
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => {
+          const messages = {
+            1: "Permissão de localização negada. Libere o acesso nas configurações do navegador.",
+            2: "Não foi possível descobrir sua localização agora.",
+            3: "A localização demorou demais para responder. Tente novamente.",
+          };
+          reject(new Error(messages[err.code] || "Não foi possível obter a localização."));
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      );
+    });
+  },
+
   escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
   },
