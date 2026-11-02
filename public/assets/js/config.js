@@ -23,6 +23,12 @@ window.API_CONFIG = {
     REMINDERS_DUE: "/reminders/due",
     CAMPAIGNS_FEATURED: "/campaigns/featured",
     CLINICS_NEARBY: "/clinics/nearby",
+    // Perfil (AC3) — contrato proposto pelo front; alinhar com o back-end (Aylon)
+    LOGOUT: "/auth/logout",
+    SESSIONS: "/auth/sessions",
+    ME_PASSWORD: "/users/me/password",
+    ME_TWO_FACTOR: "/users/me/2fa",
+    ME_NOTIFICATIONS: "/users/me/notification-preferences",
   },
   STORAGE_KEYS: {
     TOKEN: "eimmune_token",

@@ -88,6 +88,8 @@ const Api = (() => {
     REMINDERS: "eimmune_mock_reminders",
     CAMPAIGNS: "eimmune_mock_campaigns",
     CLINICS: "eimmune_mock_clinics",
+    PROFILE: "eimmune_mock_profile",
+    SESSIONS: "eimmune_mock_sessions",
     SEEDED: "eimmune_mock_seeded",
   };
 
@@ -362,8 +364,11 @@ const Api = (() => {
       return { id: uid(), nome: body.nome, email: body.email };
     }
 
-    if (path === "/users/me" && method === "GET") {
-      return getUser() || { id: "u1", nome: "Maria Eduarda", email: "admin@eimmune.com" };
+    // ---- Perfil (AC3) -------------------------------------------------
+    // Contrato proposto pelo front para as telas de Perfil; alinhar com o
+    // back-end (Aylon) antes de desligar o MOCK_MODE.
+    if (path.startsWith("/users/me") || path.startsWith("/auth/sessions") || path === "/auth/logout") {
+      return mockProfileRequest(path, method, body || {});
     }
 
     // ---- Vaccine (catálogo) ------------------------------------------
@@ -543,6 +548,121 @@ const Api = (() => {
     }
 
     throw new ApiError(`Rota mock não implementada: ${method} ${fullPath}`, 404);
+  }
+
+  /* ---- Perfil (AC3) ---- */
+  const DEFAULT_NOTIFICATIONS = { proximasDoses: true, campanhas: true, alertas: true, dicas: false, resumoSemanal: true };
+
+  function readProfile() {
+    let profile = null;
+    try { profile = JSON.parse(localStorage.getItem(DB_KEYS.PROFILE)); } catch {}
+    if (!profile) {
+      const u = getUser() || {};
+      profile = {
+        id: u.id || "u1", nome: u.nome || "Maria Eduarda", email: u.email || "admin@eimmune.com",
+        telefone: null, dataNascimento: null, twoFactorEnabled: false,
+        notificationPreferences: { ...DEFAULT_NOTIFICATIONS }, senha: "admin",
+      };
+      writeDb(DB_KEYS.PROFILE, profile);
+    }
+    return profile;
+  }
+
+  function publicProfile(p) {
+    const { senha, ...rest } = p;
+    return rest;
+  }
+
+  function readSessions() {
+    let sessions = readDb(DB_KEYS.SESSIONS);
+    if (!sessions.length) {
+      const t = mockToday();
+      sessions = [
+        { id: "s1", dispositivo: "Este navegador", ip: "127.0.0.1", criadoEm: t + "T08:00:00-03:00", atual: true },
+        { id: "s2", dispositivo: "Chrome · Android", ip: "200.0.0.10", criadoEm: addDays(t, -3) + "T19:30:00-03:00", atual: false },
+      ];
+      writeDb(DB_KEYS.SESSIONS, sessions);
+    }
+    return sessions;
+  }
+
+  function mockProfileRequest(path, method, body) {
+    const profile = readProfile();
+
+    if (path === "/users/me" && method === "GET") return publicProfile(profile);
+
+    if (path === "/users/me" && method === "PUT") {
+      const errors = {};
+      const nome = typeof body.nome === "string" ? body.nome.trim() : "";
+      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+      const telefone = typeof body.telefone === "string" && body.telefone.trim() ? body.telefone.trim() : null;
+      const dataNascimento = body.dataNascimento || null;
+      if (nome.length < 3) errors.nome = "Informe o nome completo.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Informe um e-mail válido.";
+      if (email === "existente@teste.com") errors.email = "Este e-mail já está em uso.";
+      if (telefone && !/^\d{10,11}$/.test(telefone.replace(/\D/g, ""))) errors.telefone = "Telefone inválido.";
+      if (dataNascimento && (!isValidISODate(dataNascimento) || dataNascimento > mockToday()))
+        errors.dataNascimento = "Data de nascimento inválida.";
+      if (Object.keys(errors).length) throw new ApiError("Dados inválidos.", 400, { errors });
+      Object.assign(profile, { nome, email, telefone, dataNascimento });
+      writeDb(DB_KEYS.PROFILE, profile);
+      return publicProfile(profile);
+    }
+
+    if (path === "/users/me" && method === "DELETE") {
+      Object.values(DB_KEYS).forEach((k) => localStorage.removeItem(k));
+      return null; // 204
+    }
+
+    if (path === "/users/me/password" && method === "PUT") {
+      if (body.senhaAtual !== profile.senha) {
+        throw new ApiError("Senha atual incorreta.", 400, { errors: { senhaAtual: "Senha atual incorreta." } });
+      }
+      if (typeof body.novaSenha !== "string" || body.novaSenha.length < 6) {
+        throw new ApiError("Dados inválidos.", 400, { errors: { novaSenha: "A nova senha deve ter pelo menos 6 caracteres." } });
+      }
+      profile.senha = body.novaSenha;
+      writeDb(DB_KEYS.PROFILE, profile);
+      return null; // 204
+    }
+
+    if (path === "/users/me/2fa" && method === "PUT") {
+      if (typeof body.enabled !== "boolean") throw new ApiError("Informe enabled (true ou false).", 400);
+      profile.twoFactorEnabled = body.enabled;
+      writeDb(DB_KEYS.PROFILE, profile);
+      return { twoFactorEnabled: profile.twoFactorEnabled };
+    }
+
+    if (path === "/users/me/notification-preferences") {
+      if (method === "GET") return profile.notificationPreferences;
+      if (method === "PUT") {
+        const prefs = { ...profile.notificationPreferences };
+        for (const [key, value] of Object.entries(body)) {
+          if (!(key in DEFAULT_NOTIFICATIONS) || typeof value !== "boolean") {
+            throw new ApiError("Preferência inválida.", 400, { errors: { [key]: "Valor inválido." } });
+          }
+          prefs[key] = value;
+        }
+        profile.notificationPreferences = prefs;
+        writeDb(DB_KEYS.PROFILE, profile);
+        return prefs;
+      }
+    }
+
+    if (path === "/auth/sessions" && method === "GET") return readSessions();
+    const sessionMatch = path.match(/^\/auth\/sessions\/([^/]+)$/);
+    if (sessionMatch && method === "DELETE") {
+      const sessions = readSessions();
+      const target = sessions.find((s) => s.id === sessionMatch[1]);
+      if (!target) throw new ApiError("Sessão não encontrada.", 404);
+      if (target.atual) throw new ApiError("Use “Sair da Conta” para encerrar a sessão atual.", 400);
+      writeDb(DB_KEYS.SESSIONS, sessions.filter((s) => s.id !== target.id));
+      return null; // 204
+    }
+
+    if (path === "/auth/logout" && method === "POST") return null;
+
+    throw new ApiError(`Rota mock não implementada: ${method} ${path}`, 404);
   }
 
   return {

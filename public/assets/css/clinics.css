@@ -1,0 +1,80 @@
+/* Tela Unidades de Saúde Próximas (AC3) */
+.topbar__title { font-size: 15px; margin-right: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 400px) { .topbar__title { font-size: 17px; } }
+.clinic-search { display: flex; gap: 10px; margin-bottom: 14px; }
+.clinic-search__input { flex: 1; min-width: 0; padding: 11px 14px; cursor: text; }
+.clinic-search__input input { width: 100%; min-width: 0; }
+.clinic-search__filters {
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
+  padding: 0 16px; border: 1.5px solid var(--color-border); border-radius: var(--radius-md);
+  font-weight: 600; font-size: 14px; color: var(--color-navy); background: var(--color-bg);
+}
+.clinic-search__filters[aria-expanded="true"] { border-color: var(--color-primary); color: var(--color-primary); }
+
+.clinic-notice {
+  font-size: 13px; color: var(--color-warning); background: var(--color-warning-bg);
+  padding: 10px 14px; border-radius: var(--radius-md); margin-bottom: 14px;
+}
+
+.clinic-map-wrap { position: relative; margin-bottom: 16px; }
+.clinic-map {
+  height: 240px; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--color-bg-soft); border: 1px solid var(--color-border);
+  z-index: 0;
+}
+.clinic-map--unavailable { display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; color: var(--color-text-muted); font-size: 13.5px; }
+.clinic-map__locate {
+  position: absolute; right: 14px; bottom: 14px; z-index: 5;
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-bg); color: var(--color-navy); box-shadow: var(--shadow-card);
+}
+.clinic-map__locate:hover { color: var(--color-primary); }
+
+/* Marcadores (Leaflet divIcon) */
+.clinic-pin { background: none; border: 0; }
+.clinic-pin svg { filter: drop-shadow(0 2px 3px rgba(0,0,0,.25)); }
+.clinic-pin--active svg path:first-child { fill: var(--color-navy); }
+.user-pin { background: none; border: 0; }
+.user-pin span {
+  display: block; width: 18px; height: 18px; border-radius: 50%;
+  background: #2563EB; border: 3px solid #fff;
+  box-shadow: 0 0 0 10px rgba(37, 99, 235, .18);
+}
+
+.clinic-list-card { padding: 16px; }
+.clinic-list-card__header {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding-bottom: 12px; border-bottom: 1px solid var(--color-border);
+}
+.clinic-list-card__title { display: flex; align-items: center; gap: 8px; font-size: 15.5px; color: var(--color-navy); }
+.clinic-sort { font-size: 13px; font-weight: 500; color: var(--color-navy); background: transparent; cursor: pointer; }
+
+.clinic-item {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 4px; text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.clinic-item:last-child { border-bottom: 0; }
+.clinic-item:hover, .clinic-item.is-active { background: var(--color-bg-soft); }
+.clinic-item.is-active { box-shadow: inset 3px 0 0 var(--color-primary); }
+.clinic-item__icon {
+  width: 64px; height: 64px; border-radius: var(--radius-md); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-mint); color: var(--color-primary);
+}
+.clinic-item__body { flex: 1; min-width: 0; }
+.clinic-item__name { font-weight: 700; color: var(--color-navy); font-size: 15px; }
+.clinic-item__line { display: flex; align-items: flex-start; gap: 6px; margin-top: 4px; font-size: 13px; color: var(--color-text-muted); }
+.clinic-item__line svg { flex-shrink: 0; margin-top: 2px; }
+.clinic-item__distance {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 6px;
+  background: var(--color-primary-light); color: var(--color-primary-dark);
+  font-size: 12.5px; font-weight: 600;
+}
+.clinic-item__chevron { color: var(--color-navy); flex-shrink: 0; }
+
+.clinic-routes { margin-top: 16px; }
+.clinic-routes[aria-disabled="true"] { opacity: .5; pointer-events: none; box-shadow: none; }
+
+.leaflet-popup-content { font-family: var(--font-body, inherit); font-size: 13px; }
