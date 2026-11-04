@@ -21,7 +21,7 @@ model User {
   dataNascimento          DateTime? @map("data_nascimento")
   twoFactorSecret         String?   @map("2fa_secret")
   twoFactorEnabled        Boolean   @default(false) @map("2fa_enabled")
-  notificationPreferences Json      @default("{\"push\": true, \"email\": true, \"whatsapp\": false}") @map("notification_preferences")
+  notificationPreferences Json      @default("{\"alertas\": true, \"proximasDoses\": true, \"campanhas\": true, \"dicas\": false, \"resumoSemanal\": false}") @map("notification_preferences")
   role                    String    @default("USER")
   criadoEm                DateTime  @default(now()) @map("criado_em")
   atualizadoEm            DateTime  @updatedAt @map("atualizado_em")
@@ -93,43 +93,45 @@ model VaccineRecord {
   criadoEm        DateTime  @default(now()) @map("criado_em")
   atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vaccine   Vaccine    @relation(fields: [vaccineId], references: [id])
-  reminders Reminder[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vaccine  Vaccine   @relation(fields: [vaccineId], references: [id])
+  reminder Reminder?
 
   @@index([userId])
   @@index([vaccineId])
   @@map("vaccine_record")
 }
 
+// AC3: um lembrete por registro de vacina. O disparo não é gravado; é calculado
+// como (data_proxima_dose do registro - antecedencia_dias) às `horario` de São Paulo.
 model Reminder {
-  id                String   @id @default(uuid())
-  userId            String   @map("user_id")
-  vaccineRecordId   String?  @map("vaccine_record_id")
-  titulo            String
-  descricao         String?
-  agendadoPara      DateTime @map("agendado_para")
-  antecedenciaHoras Int      @default(24) @map("antecedencia_horas")
-  canal             String   @default("push")
-  status            String   @default("pending")
-  criadoEm          DateTime @default(now()) @map("criado_em")
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  vaccineRecordId  String   @unique @map("vaccine_record_id")
+  ativo            Boolean  @default(true)
+  antecedenciaDias Int      @default(1) @map("antecedencia_dias")
+  horario          String   @default("09:00") @db.VarChar(5)
+  lidoPara         String?  @map("lido_para")
+  criadoEm         DateTime @default(now()) @map("criado_em")
+  atualizadoEm     DateTime @updatedAt @map("atualizado_em")
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vaccineRecord VaccineRecord? @relation(fields: [vaccineRecordId], references: [id], onDelete: SetNull)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vaccineRecord VaccineRecord @relation(fields: [vaccineRecordId], references: [id], onDelete: Cascade)
 
-  @@index([userId, agendadoPara])
+  @@index([userId])
   @@map("reminder")
 }
 
 model Campaign {
-  id         String   @id @default(uuid())
-  titulo     String
-  descricao  String
-  destaque   Boolean  @default(false)
-  dataInicio DateTime @map("data_inicio")
-  dataFim    DateTime @map("data_fim")
-  imagemUrl  String?  @map("imagem_url")
-  criadoEm   DateTime @default(now()) @map("criado_em")
+  id          String   @id @default(uuid())
+  titulo      String
+  descricao   String
+  destaque    Boolean  @default(false)
+  publicoAlvo String?  @map("publico_alvo")
+  dataInicio  DateTime @map("data_inicio")
+  dataFim     DateTime @map("data_fim")
+  imagemUrl   String?  @map("imagem_url")
+  criadoEm    DateTime @default(now()) @map("criado_em")
 
   vaccines CampaignVaccines[]
 

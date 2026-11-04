@@ -1,6 +1,6 @@
 # Banco de dados — e-imune
 
-Entrega S0 + ajustes da AC2 (JP). Contrato para Aylon, Gustavo, PH e Endrew. Schema em `prisma/schema.prisma`.
+Entrega S0 + ajustes da AC2 e da AC3 (JP). Contrato para Aylon, Gustavo, PH e Endrew. Schema em `prisma/schema.prisma`.
 
 ## Como sobe
 
@@ -30,6 +30,7 @@ Migrations (`prisma/migrations`):
 | `20260831223822_init_eimune_v2` | S0 | cria todas as tabelas |
 | `20261012120000_add_vaccine_record_observacoes` | AC2 | `vaccine_record.observacoes` |
 | `20261012130000_add_vaccine_record_atualizado_em` | AC2 | `vaccine_record.atualizado_em` |
+| `20261104120000_ac3_lembretes_campanhas_preferencias` | AC3 | lembrete por registro, `campaign.publico_alvo`, novas preferências de notificação |
 
 Mudou o schema? Gere a migration junto (`npm run db:migrate`) e commite as duas coisas. Campo no schema sem migration quebra o banco de quem clonar.
 
@@ -39,7 +40,7 @@ Mudou o schema? Gere a migration junto (`npm run db:migrate`) e commite as duas 
 User ── Session
      ├── PasswordResetToken
      ├── VaccineRecord ── Vaccine ── CampaignVaccines ── Campaign
-     └── Reminder ── (opcional) VaccineRecord
+     └── Reminder ── VaccineRecord (1 lembrete por registro)
 Clinic   isolada (geo)
 ```
 
@@ -58,7 +59,7 @@ Diagrama: [prisma/ERD.md](../prisma/ERD.md).
 | dataNascimento | data_nascimento | datetime? | |
 | twoFactorSecret | 2fa_secret | string? | |
 | twoFactorEnabled | 2fa_enabled | boolean | default false |
-| notificationPreferences | notification_preferences | json | `{"push":true,"email":true,"whatsapp":false}` |
+| notificationPreferences | notification_preferences | json | `{"alertas":true,"proximasDoses":true,"campanhas":true,"dicas":false,"resumoSemanal":false}` (AC3, uma chave por toggle da tela Preferências) |
 | role | role | string | `USER` \| `ADMIN` |
 | criadoEm / atualizadoEm | criado_em / atualizado_em | datetime | |
 
@@ -92,19 +93,32 @@ Status da UI (aplicada / pendente / atrasada) **não é coluna**. Calcula:
 
 Badges da tela Próximas Doses (dias até `dataProximaDose`): `OVERDUE` < 0, `DUE_SOON` 0–7, `UPCOMING` 8–30, `SCHEDULED` > 30. Regra em `src/services/vaccine-progress.service.ts`.
 
-### Reminder — Gustavo
+### Reminder — Gustavo (AC3)
 
-`titulo`, `descricao`, `agendadoPara`, `antecedenciaHoras` (default 24), `canal` (`push` \| `email` \| `whatsapp`), `status` (`pending` \| `sent` \| `cancelled`).
+Um lembrete por registro de vacina (`vaccine_record_id` único). Apagar o registro apaga o lembrete (`ON DELETE CASCADE`).
 
-`vaccineRecordId` é opcional (`ON DELETE SET NULL`).
+| Campo | Coluna | Tipo | Notas |
+|---|---|---|---|
+| vaccineRecordId | vaccine_record_id | uuid unique | registro que tem a próxima dose |
+| ativo | ativo | boolean | toggle da tela Lembrete, default true |
+| antecedenciaDias | antecedencia_dias | int | 0 a 30 (validado na API), default 1 |
+| horario | horario | varchar(5) | `HH:mm` no horário de São Paulo, default `09:00` |
+| lidoPara | lido_para | string? | disparo que o usuário já marcou como visto |
+| criadoEm / atualizadoEm | criado_em / atualizado_em | datetime | |
+
+O momento do disparo **não é coluna**. Calcula: `data_proxima_dose` do registro − `antecedencia_dias`, às `horario`. Editar a data da próxima dose reagenda sozinho.
+
+Status da UI (calculado, não gravado): `DESATIVADO` (toggle desligado), `SEM_DATA` (registro sem próxima dose), `AGENDADO` (disparo no futuro), `PENDENTE` (disparo já passou e não foi visto), `LIDO` (`lido_para` igual ao disparo atual). Regra em `src/services/reminder.service.ts`.
 
 ### Campaign + CampaignVaccines — Gustavo
 
-Campanha N:N com vacinas. `destaque`, `dataInicio`, `dataFim`, `imagemUrl`.
+Campanha N:N com vacinas. `destaque`, `publicoAlvo` (AC3), `dataInicio`, `dataFim`, `imagemUrl`.
+
+"Em destaque" para a Home = `destaque = true` e hoje entre `dataInicio` e `dataFim`. A API devolve as datas como `inicio` e `fim`.
 
 ### Clinic — Gustavo
 
-`nome`, `endereco`, `cidade`, `estado` (CHAR 2), `cep`, `latitude`, `longitude`, `telefone`, `horario`. Distância não grava — calcula com lat/lng.
+`nome`, `endereco`, `cidade`, `estado` (CHAR 2), `cep`, `latitude`, `longitude`, `telefone`, `horario`. Distância não grava — calcula com lat/lng (Haversine, com pré-filtro por retângulo no índice `latitude, longitude`). A API devolve `estado` como `uf`.
 
 ## Seed
 
@@ -114,9 +128,10 @@ Campanha N:N com vacinas. `destaque`, `dataInicio`, `dataFim`, `imagemUrl`.
 |---|---|---|
 | users | 2 | `admin@eimune.test` / `Admin123!` (ADMIN), `user@eimune.test` / `User123!` |
 | vacinas | 6 | COVID, Influenza, Hepatite B, Tríplice Viral, Febre Amarela, HPV |
-| campanhas | 3 | 1 em destaque (Influenza), todas vigentes |
+| campanhas | 3 | 2 em destaque (Influenza, Multivacinação), todas vigentes e com público-alvo |
 | clínicas | 5 | SP capital, lat/lng reais |
 | records | 7 | no user, 64% de progresso — ver tabela abaixo |
+| lembretes | 3 | no user — ver tabela abaixo |
 
 Cenário do `user@eimune.test` (AC2):
 
@@ -128,6 +143,14 @@ Cenário do `user@eimune.test` (AC2):
 | Tríplice Viral | 1 de 2 | em 5 dias | `DUE_SOON` |
 | COVID-19 | 1 de 2 | em 18 dias | `UPCOMING` |
 | HPV | 1 de 2 | em 120 dias | `SCHEDULED` |
+
+Lembretes do `user@eimune.test` (AC3):
+
+| Registro | Configuração | Status esperado |
+|---|---|---|
+| Hepatite B, dose 2 | ativo, 1 dia antes às 09:00 | `PENDENTE` (aparece em `/reminders/due`) |
+| COVID-19, dose 1 | ativo, 3 dias antes às 08:30 | `AGENDADO` |
+| Tríplice Viral, dose 1 | desligado | `DESATIVADO` |
 
 ## Uso no código
 
@@ -152,6 +175,7 @@ npm test              # precisa do banco no ar (cria e apaga os próprios dados)
 |---|---|
 | Confirmar senha | só no front |
 | Foto de perfil | fora do contrato S0 |
-| Toggles (dicas, resumo semanal…) | contrato é `{ push, email, whatsapp }` |
 | Distância da clínica | cálculo |
 | Status aplicada/pendente | cálculo |
+| Momento do disparo do lembrete | cálculo (próxima dose − antecedência) |
+| Envio de push / e-mail / WhatsApp | fora do escopo: o app mostra os pendentes (`/reminders/due`) |
