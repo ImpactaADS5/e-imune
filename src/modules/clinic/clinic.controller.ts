@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import * as clinicService from "./clinic.service";
 import { clinicSchema } from "../../lib/validation";
 import log, { describeError, sanitizeForLog } from "../../lib/log";
+import { validateNearbyQuery } from "../../services/clinic.service";
 
 export const create = async (req: Request, res: Response) => {
   log.debug({ requestId: req.requestId, body: sanitizeForLog(req.body) }, "ClinicController.create: requisição recebida.");
@@ -29,5 +30,18 @@ export const list = async (req: Request, res: Response) => {
   } catch (error) {
     log.error({ requestId: req.requestId, error: describeError(error) }, "ClinicController.list: erro ao listar clínicas.");
     res.status(500).json({ error: "Erro ao listar clínicas" });
+  }
+};
+
+/** GET /clinics/nearby?lat=-23.55&lng=-46.63&raio=10&limit=10 */
+export const nearby = async (req: Request, res: Response) => {
+  const { errors, ok, value } = validateNearbyQuery(req.query as Record<string, unknown>);
+  if (!ok || !value) return res.status(400).json({ error: "Parâmetros inválidos.", errors });
+
+  try {
+    return res.status(200).json(await clinicService.getNearbyClinics(value));
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "ClinicController.nearby: erro ao buscar clínicas próximas.");
+    return res.status(500).json({ error: "Erro ao buscar clínicas próximas." });
   }
 };

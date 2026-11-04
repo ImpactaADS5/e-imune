@@ -1,5 +1,4 @@
 import { addDays } from "../lib/dates";
-import type { ReminderRow } from "../repositories/reminder.repository";
 import { nextDoseLabel } from "./vaccine-progress.service";
 
 /**
@@ -14,6 +13,23 @@ export type ReminderStatus =
   | "AGENDADO" // ligado, disparo ainda no futuro
   | "PENDENTE" // já deveria ter disparado e o usuário ainda não viu
   | "LIDO"; // usuário já viu esse disparo
+
+/** Lembrete já com os dados do registro de vacina ligado a ele. */
+export interface ReminderRow {
+  id: string;
+  vaccineRecordId: string;
+  vaccineNome: string;
+  /** Rótulo da dose aplicada no registro (ex.: "1ª Dose"). */
+  dose: string | null;
+  /** Próxima dose do REGISTRO (YYYY-MM-DD) ou null se o registro não tem. */
+  proximaDose: string | null;
+  ativo: boolean;
+  antecedenciaDias: number;
+  /** "HH:mm" no horário de São Paulo. */
+  horario: string;
+  /** Disparo que o usuário já marcou como lido (coluna lido_para). */
+  lidoPara: string | null;
+}
 
 export interface ReminderView {
   id: string;
@@ -42,7 +58,7 @@ export function toReminderView(row: ReminderRow, now: Date = new Date()): Remind
   let status: ReminderStatus;
   if (!row.ativo) status = "DESATIVADO";
   else if (!disparoEm) status = "SEM_DATA";
-  else if (row.ackedFor === disparoEm) status = "LIDO";
+  else if (row.lidoPara === disparoEm) status = "LIDO";
   else if (Date.parse(disparoEm) <= now.getTime()) status = "PENDENTE";
   else status = "AGENDADO";
 

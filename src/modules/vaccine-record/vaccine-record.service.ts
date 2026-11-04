@@ -225,3 +225,19 @@ export const getNextDoses = async (userId: string) => {
       diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
     }));
 };
+
+/**
+ * Exclui o registro do usuário. O lembrete ligado a ele sai junto
+ * (ON DELETE CASCADE); a contagem é só para avisar o usuário.
+ */
+export const deleteVaccineRecord = async (id: string, userId: string) => {
+  return prisma.$transaction(async (tx) => {
+    const record = await tx.vaccineRecord.findFirst({
+      where: { id, userId },
+      select: { reminder: { select: { id: true } } },
+    });
+    if (!record) return null;
+    await tx.vaccineRecord.delete({ where: { id } });
+    return { removedReminders: record.reminder ? 1 : 0 };
+  });
+};

@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import * as campaignService from "./campaign.service";
 import { campaignSchema } from "../../lib/validation";
 import log, { describeError, sanitizeForLog } from "../../lib/log";
+import { todayISO } from "../../lib/dates";
+import { parseLimit } from "../../services/campaign.service";
 
 export const create = async (req: Request, res: Response) => {
   log.debug({ requestId: req.requestId, body: sanitizeForLog(req.body) }, "CampaignController.create: requisição recebida.");
@@ -33,5 +35,18 @@ export const list = async (req: Request, res: Response) => {
   } catch (error) {
     log.error({ requestId: req.requestId, error: describeError(error) }, "CampaignController.list: erro ao listar campanhas.");
     res.status(500).json({ error: "Erro ao listar campanhas" });
+  }
+};
+
+/** GET /campaigns/featured?limit=5 */
+export const featured = async (req: Request, res: Response) => {
+  const { limit, error } = parseLimit(req.query.limit);
+  if (error) return res.status(400).json({ error, errors: { limit: error } });
+
+  try {
+    return res.status(200).json(await campaignService.getFeaturedCampaigns(todayISO(), limit));
+  } catch (err) {
+    log.error({ requestId: req.requestId, error: describeError(err) }, "CampaignController.featured: erro ao buscar campanhas em destaque.");
+    return res.status(500).json({ error: "Erro ao buscar campanhas em destaque." });
   }
 };

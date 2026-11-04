@@ -6,5 +6,6 @@ const router = Router();
 
 router.post("/", requireAuth, requireRole("ADMIN"), clinicController.create);
 router.get("/", requireAuth, clinicController.list);
+router.get("/nearby", requireAuth, clinicController.nearby);
 
 export default router;

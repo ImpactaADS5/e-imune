@@ -33,20 +33,11 @@ export const vaccineRecordSchema = z.object({
   comprovanteUrl: z.string().url().max(2048).nullish(),
 });
 
-export const reminderSchema = z.object({
-  vaccineRecordId: z.string().uuid().optional().nullable(),
-  titulo: z.string().trim().min(1).max(160),
-  descricao: optionalText(1000),
-  agendadoPara: dateText,
-  antecedenciaHoras: z.coerce.number().int().min(0).max(8760).optional(),
-  canal: z.enum(["push", "email", "whatsapp"]).optional(),
-  status: z.enum(["pending", "sent", "cancelled"]).optional(),
-});
-
 export const campaignSchema = z.object({
   titulo: z.string().trim().min(1).max(200),
   descricao: z.string().trim().min(1).max(2000),
   destaque: z.boolean().optional(),
+  publicoAlvo: optionalText(200),
   dataInicio: dateText,
   dataFim: dateText,
   imagemUrl: z.string().url().max(2048).nullish(),
@@ -66,6 +57,5 @@ export const clinicSchema = z.object({
 
 export type CreateVaccineInput = z.infer<typeof vaccineSchema>;
 export type CreateVaccineRecordInput = z.infer<typeof vaccineRecordSchema>;
-export type CreateReminderInput = z.infer<typeof reminderSchema>;
 export type CreateCampaignInput = z.infer<typeof campaignSchema>;
 export type CreateClinicInput = z.infer<typeof clinicSchema>;

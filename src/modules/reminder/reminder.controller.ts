@@ -1,36 +1,99 @@
 import { Request, Response } from "express";
 import * as reminderService from "./reminder.service";
-import { reminderSchema } from "../../lib/validation";
-import log, { describeError, sanitizeForLog } from "../../lib/log";
+import { validateReminderCreate, validateReminderUpdate } from "../../services/reminder.validation";
+import log, { describeError } from "../../lib/log";
 
-export const create = async (req: Request, res: Response) => {
-  log.debug({ requestId: req.requestId, userId: req.user?.userId, body: sanitizeForLog(req.body) }, "ReminderController.create: requisição recebida.");
+const NOT_FOUND = { error: "Lembrete não encontrado." };
+
+function userId(req: Request): string {
+  return req.user!.userId;
+}
+
+function invalid(res: Response, errors: Record<string, string>) {
+  return res.status(400).json({ error: errors._ ?? "Dados inválidos.", errors });
+}
+
+function handleError(req: Request, res: Response, error: unknown, context: string) {
+  if (error instanceof reminderService.ReminderError) {
+    const body = error.field ? { error: error.message, errors: { [error.field]: error.message } } : { error: error.message };
+    return res.status(error.status).json(body);
+  }
+  log.error({ requestId: req.requestId, error: describeError(error) }, `ReminderController.${context}: erro inesperado.`);
+  return res.status(500).json({ error: "Erro ao processar o lembrete." });
+}
+
+/** GET /reminders — lembretes do usuário com disparo e status calculados */
+export const list = async (req: Request, res: Response) => {
   try {
-    const parsed = reminderSchema.safeParse(req.body);
-    if (!parsed.success) {
-      log.warn({ requestId: req.requestId, validation: parsed.error.flatten() }, "ReminderController.create: dados inválidos.");
-      return res.status(400).json({ error: "Dados inválidos.", details: parsed.error.flatten() });
-    }
-    const result = await reminderService.createReminder(req.user!.userId, parsed.data);
-    log.info({ requestId: req.requestId, reminder: sanitizeForLog(result) }, "ReminderController.create: resposta de criação enviada.");
-    res.status(201).json(result);
+    return res.status(200).json(await reminderService.listReminders(userId(req)));
   } catch (error) {
-    log.error({ requestId: req.requestId, error: describeError(error) }, "ReminderController.create: erro ao criar lembrete.");
-    if ((error as { code?: string }).code === "VACCINE_RECORD_NOT_FOUND") {
-      return res.status(404).json({ error: "Registro de vacina não encontrado." });
-    }
-    res.status(500).json({ error: "Erro ao criar lembrete" });
+    return handleError(req, res, error, "list");
   }
 };
 
-export const list = async (req: Request, res: Response) => {
-  log.debug({ requestId: req.requestId, userId: req.user?.userId }, "ReminderController.list: requisição recebida.");
+/** GET /reminders/due — o que já deveria ter avisado e ainda não foi visto (sino da Home) */
+export const due = async (req: Request, res: Response) => {
   try {
-    const result = await reminderService.getAllReminders(req.user!.userId);
-    log.info({ requestId: req.requestId, userId: req.user?.userId, count: result.length }, "ReminderController.list: lembretes enviados.");
-    res.status(200).json(result);
+    return res.status(200).json(await reminderService.listDueReminders(userId(req)));
   } catch (error) {
-    log.error({ requestId: req.requestId, error: describeError(error) }, "ReminderController.list: erro ao listar lembretes.");
-    res.status(500).json({ error: "Erro ao listar lembretes" });
+    return handleError(req, res, error, "due");
+  }
+};
+
+export const getById = async (req: Request, res: Response) => {
+  try {
+    const reminder = await reminderService.getReminder(String(req.params.id), userId(req));
+    if (!reminder) return res.status(404).json(NOT_FOUND);
+    return res.status(200).json(reminder);
+  } catch (error) {
+    return handleError(req, res, error, "getById");
+  }
+};
+
+/** POST /reminders — um lembrete por registro de vacina */
+export const create = async (req: Request, res: Response) => {
+  const { errors, ok, value } = validateReminderCreate(req.body);
+  if (!ok) return invalid(res, errors);
+
+  try {
+    const { vaccineRecordId, ...fields } = value;
+    return res.status(201).json(await reminderService.createReminder(userId(req), vaccineRecordId, fields));
+  } catch (error) {
+    return handleError(req, res, error, "create");
+  }
+};
+
+/** PUT /reminders/:id — toggle, antecedência e horário (campos parciais) */
+export const update = async (req: Request, res: Response) => {
+  const { errors, ok, value } = validateReminderUpdate(req.body);
+  if (!ok) return invalid(res, errors);
+
+  try {
+    const reminder = await reminderService.updateReminder(String(req.params.id), userId(req), value);
+    if (!reminder) return res.status(404).json(NOT_FOUND);
+    return res.status(200).json(reminder);
+  } catch (error) {
+    return handleError(req, res, error, "update");
+  }
+};
+
+/** POST /reminders/:id/ack — marca o aviso atual como visto */
+export const ack = async (req: Request, res: Response) => {
+  try {
+    const reminder = await reminderService.ackReminder(String(req.params.id), userId(req));
+    if (!reminder) return res.status(404).json(NOT_FOUND);
+    return res.status(200).json(reminder);
+  } catch (error) {
+    return handleError(req, res, error, "ack");
+  }
+};
+
+export const remove = async (req: Request, res: Response) => {
+  try {
+    const deleted = await reminderService.deleteReminder(String(req.params.id), userId(req));
+    if (!deleted) return res.status(404).json(NOT_FOUND);
+    return res.status(204).send();
+  } catch (error) {
+    return handleError(req, res, error, "remove");
   }
 };

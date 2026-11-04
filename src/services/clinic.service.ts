@@ -1,5 +1,18 @@
 import { haversineKm } from "../lib/geo";
-import type { ClinicRow } from "../repositories/clinic.repository";
+
+/** Clínica no formato da API (`uf` vem da coluna `estado`). */
+export interface ClinicRow {
+  id: string;
+  nome: string;
+  endereco: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  telefone: string | null;
+  horario: string | null;
+  latitude: number;
+  longitude: number;
+}
 
 export const DEFAULT_RADIUS_KM = 10;
 export const MAX_RADIUS_KM = 100;
