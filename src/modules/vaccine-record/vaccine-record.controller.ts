@@ -82,6 +82,18 @@ export const update = async (req: Request, res: Response) => {
   }
 };
 
+/** DELETE /vaccine-records/:id — apaga o registro e o lembrete ligado a ele */
+export const remove = async (req: Request, res: Response) => {
+  try {
+    const result = await vaccineRecordService.deleteVaccineRecord(String(req.params.id), userId(req));
+    if (!result) return res.status(404).json({ error: "Registro não encontrado." });
+    return res.status(200).json({ deleted: true, removedReminders: result.removedReminders });
+  } catch (error) {
+    log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.remove: erro ao remover registro.");
+    return res.status(500).json({ error: "Erro ao remover registro." });
+  }
+};
+
 export const summary = async (req: Request, res: Response) => {
   try {
     const result = await vaccineRecordService.getVaccineRecordSummary(userId(req));
@@ -121,15 +133,5 @@ export const nextDoses = async (req: Request, res: Response) => {
   } catch (error) {
     log.error({ requestId: req.requestId, error: describeError(error) }, "VaccineRecordController.nextDoses: erro ao buscar próximas doses.");
     return res.status(500).json({ error: "Erro ao buscar próximas doses." });
-  }
-};
-
-export const remove = async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    await vaccineRecordService.deleteVaccineRecord(id);
-    res.status(204).send();
-  } catch (error: any) {
-    res.status(500).json({ error: "Erro ao excluir registro", detalhes: error.message });
   }
 };

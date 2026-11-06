@@ -1,5 +1,16 @@
 import { diffDays } from "../lib/dates";
-import type { CampaignRow } from "../repositories/campaign.repository";
+
+/** Campanha no formato da API (datas "YYYY-MM-DD"). */
+export interface CampaignRow {
+  id: string;
+  titulo: string;
+  descricao: string;
+  publicoAlvo: string | null;
+  inicio: string;
+  fim: string;
+  destaque: boolean;
+  imagemUrl: string | null;
+}
 
 export interface FeaturedCampaign extends CampaignRow {
   /** Dias até o último dia da campanha (0 = termina hoje). */

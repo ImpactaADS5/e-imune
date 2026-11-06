@@ -223,16 +223,21 @@ export const getNextDoses = async (userId: string) => {
     .map((record) => ({
       ...toApiRecord(record),
       diasRestantes: record.dataProximaDose ? diffDays(today, toISO(record.dataProximaDose)) : null,
-    }));    
+    }));
 };
 
-export const deleteVaccineRecord = async (id: string) => {
-  // Tratar FK: Apaga os lembretes associados antes do registro principal
-  await prisma.reminder.deleteMany({
-    where: { vaccineRecordId: id } 
-  });
-
-  return await prisma.vaccineRecord.delete({
-    where: { id }
+/**
+ * Exclui o registro do usuário. O lembrete ligado a ele sai junto
+ * (ON DELETE CASCADE); a contagem é só para avisar o usuário.
+ */
+export const deleteVaccineRecord = async (id: string, userId: string) => {
+  return prisma.$transaction(async (tx) => {
+    const record = await tx.vaccineRecord.findFirst({
+      where: { id, userId },
+      select: { reminder: { select: { id: true } } },
+    });
+    if (!record) return null;
+    await tx.vaccineRecord.delete({ where: { id } });
+    return { removedReminders: record.reminder ? 1 : 0 };
   });
 };

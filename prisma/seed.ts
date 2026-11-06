@@ -20,6 +20,15 @@ const IDS = {
     multivacinacao: "bbbbbbbb-2222-4222-8222-222222222222",
     hpv: "bbbbbbbb-3333-4333-8333-333333333333",
   },
+  records: {
+    influenza: "dddddddd-1111-4111-8111-111111111111",
+    febreAmarela: "dddddddd-2222-4222-8222-222222222222",
+    hepatiteB1: "dddddddd-3333-4333-8333-333333333333",
+    hepatiteB2: "dddddddd-4444-4444-8444-444444444444",
+    triplice: "dddddddd-5555-4555-8555-555555555555",
+    covid: "dddddddd-6666-4666-8666-666666666666",
+    hpv: "dddddddd-7777-4777-8777-777777777777",
+  },
   clinics: {
     hc: "cccccccc-1111-4111-8111-111111111111",
     butantan: "cccccccc-2222-4222-8222-222222222222",
@@ -149,6 +158,7 @@ async function seedCampaigns() {
       titulo: "Campanha Nacional de Influenza 2026",
       descricao: "Vacinação contra a gripe para grupos prioritários na capital.",
       destaque: true,
+      publicoAlvo: "Idosos, gestantes e crianças de 6 meses a 6 anos",
       dataInicio: daysAgo(30),
       dataFim: daysFromNow(60),
       vaccines: {
@@ -162,7 +172,8 @@ async function seedCampaigns() {
       id: IDS.campaigns.multivacinacao,
       titulo: "Multivacinação infantil",
       descricao: "Atualização da caderneta: Tríplice Viral, Hepatite B e Febre Amarela.",
-      destaque: false,
+      destaque: true,
+      publicoAlvo: "Crianças e adolescentes até 15 anos",
       dataInicio: daysAgo(120),
       dataFim: daysFromNow(90),
       vaccines: {
@@ -181,6 +192,7 @@ async function seedCampaigns() {
       titulo: "HPV nas escolas",
       descricao: "Vacinação de adolescentes em unidades da rede municipal.",
       destaque: false,
+      publicoAlvo: "Adolescentes de 9 a 14 anos",
       dataInicio: daysAgo(150),
       dataFim: daysFromNow(45),
       vaccines: {
@@ -267,6 +279,7 @@ async function seedRecords(userId: string) {
   await prisma.vaccineRecord.createMany({
     data: [
       {
+        id: IDS.records.influenza,
         userId,
         vaccineId: IDS.vaccines.influenza,
         numeroDose: 1,
@@ -277,6 +290,7 @@ async function seedRecords(userId: string) {
         observacoes: "Dose anual da campanha de gripe.",
       },
       {
+        id: IDS.records.febreAmarela,
         userId,
         vaccineId: IDS.vaccines.febreAmarela,
         numeroDose: 1,
@@ -286,6 +300,7 @@ async function seedRecords(userId: string) {
         local: "Instituto Butantan — Ambulatório",
       },
       {
+        id: IDS.records.hepatiteB1,
         userId,
         vaccineId: IDS.vaccines.hepatiteB,
         numeroDose: 1,
@@ -295,6 +310,7 @@ async function seedRecords(userId: string) {
         local: "Santa Casa de Misericórdia de São Paulo",
       },
       {
+        id: IDS.records.hepatiteB2,
         userId,
         vaccineId: IDS.vaccines.hepatiteB,
         numeroDose: 2,
@@ -305,6 +321,7 @@ async function seedRecords(userId: string) {
         observacoes: "Segunda dose aplicada com 2 dias de atraso.",
       },
       {
+        id: IDS.records.triplice,
         userId,
         vaccineId: IDS.vaccines.triplice,
         numeroDose: 1,
@@ -314,6 +331,7 @@ async function seedRecords(userId: string) {
         local: "Hospital das Clínicas — Centro de Imunização",
       },
       {
+        id: IDS.records.covid,
         userId,
         vaccineId: IDS.vaccines.covid,
         numeroDose: 1,
@@ -323,6 +341,7 @@ async function seedRecords(userId: string) {
         local: "Hospital São Paulo — UNIFESP",
       },
       {
+        id: IDS.records.hpv,
         userId,
         vaccineId: IDS.vaccines.hpv,
         numeroDose: 1,
@@ -335,6 +354,20 @@ async function seedRecords(userId: string) {
   });
 }
 
+async function seedReminders(userId: string) {
+  // Cenário da AC3 (tela Lembrete e sino da Home), um lembrete por registro:
+  //   Hepatite B dose 2 ... ativo, dose venceu -> PENDENTE (aparece em /reminders/due)
+  //   COVID-19 dose 1 ..... ativo, 3 dias antes às 08:30 -> AGENDADO
+  //   Tríplice Viral ...... desligado -> DESATIVADO
+  await prisma.reminder.createMany({
+    data: [
+      { userId, vaccineRecordId: IDS.records.hepatiteB2, ativo: true, antecedenciaDias: 1, horario: "09:00" },
+      { userId, vaccineRecordId: IDS.records.covid, ativo: true, antecedenciaDias: 3, horario: "08:30" },
+      { userId, vaccineRecordId: IDS.records.triplice, ativo: false, antecedenciaDias: 1, horario: "09:00" },
+    ],
+  });
+}
+
 async function main() {
   await clearDevData();
   const { admin, user } = await seedUsers();
@@ -342,11 +375,12 @@ async function main() {
   await seedCampaigns();
   await seedClinics();
   await seedRecords(user.id);
+  await seedReminders(user.id);
 
   console.log("Seed ok:");
   console.log(`  admin  ${admin.email} / Admin123!`);
   console.log(`  user   ${user.email} / User123!`);
-  console.log("  6 vacinas, 3 campanhas, 5 clínicas, 7 registros do user");
+  console.log("  6 vacinas, 3 campanhas, 5 clínicas, 7 registros e 3 lembretes do user");
 }
 
 main()

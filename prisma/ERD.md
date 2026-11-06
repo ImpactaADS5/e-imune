@@ -1,10 +1,10 @@
-# ERD — e-imune (S0 + AC2)
+# ERD — e-imune (S0 + AC2 + AC3)
 
 Documentação completa: [docs/banco-de-dados.md](../docs/banco-de-dados.md).
 
 Decisão de migração: **RESET + RESEED**. Sem dado de produção. Tabelas legadas `paciente`, `vacina` e `aplicacao` foram substituídas.
 
-`Clinic` não tem FK para `Vaccine`. `Reminder.vaccine_record_id` é opcional.
+`Clinic` não tem FK para `Vaccine`. `Reminder.vaccine_record_id` é único: um lembrete por registro, apagado junto com ele.
 
 ```mermaid
 erDiagram
@@ -13,7 +13,7 @@ erDiagram
   User ||--o{ VaccineRecord : has
   User ||--o{ Reminder : has
   Vaccine ||--o{ VaccineRecord : has
-  VaccineRecord ||--o{ Reminder : has
+  VaccineRecord ||--o| Reminder : has
   Vaccine ||--o{ CampaignVaccines : has
   Campaign ||--o{ CampaignVaccines : has
   VaccineRecord {
@@ -30,6 +30,17 @@ erDiagram
     datetime criado_em
     datetime atualizado_em
   }
+  Reminder {
+    string id
+    string user_id
+    string vaccine_record_id UK
+    boolean ativo
+    int antecedencia_dias
+    string horario
+    string lido_para
+    datetime criado_em
+    datetime atualizado_em
+  }
   Clinic {
     string id
     string nome
@@ -39,6 +50,8 @@ erDiagram
 ```
 
 AC2: `VaccineRecord` ganhou `observacoes` e `atualizado_em`.
+
+AC3: `Reminder` virou um por registro (`ativo`, `antecedencia_dias`, `horario`, `lido_para`), `Campaign` ganhou `publico_alvo` e `user.notification_preferences` passou a ter uma chave por toggle.
 
 ## Tabelas
 
