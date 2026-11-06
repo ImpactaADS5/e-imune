@@ -223,12 +223,45 @@ function vaccineOf(record) {
   return record.vaccine || vaccineCatalog.get(record.vaccineId) || null;
 }
 
+/*
+ * A API atual (e o mock) devolvem `dose` (texto), `proximaDose` e `vaccineNome`;
+ * a versão anterior devolvia `numeroDose` e `dataProximaDose`. Os helpers abaixo
+ * aceitam os dois formatos.
+ */
+function nextDateOf(record) {
+  return record.proximaDose || record.dataProximaDose || null;
+}
+
+function doseNumberOf(record) {
+  if (Number.isInteger(record.numeroDose)) return record.numeroDose;
+  const match = typeof record.dose === "string" ? record.dose.match(/(\d+)/) : null;
+  return match ? Number(match[1]) : null;
+}
+
+function requiredDosesOf(vaccine) {
+  return vaccine?.dosesNecessarias ?? vaccine?.dosesRecomendadas ?? null;
+}
+
+function appliedDoseLabel(record, vaccine) {
+  if (typeof record.dose === "string" && record.dose.trim()) return record.dose.trim();
+  return doseLabel(record.numeroDose, vaccine);
+}
+
+function pendingDoseLabel(record, vaccine) {
+  const current = doseNumberOf(record);
+  const required = requiredDosesOf(vaccine);
+  if (current === null) return required === 1 ? "Reforço" : "Próxima dose";
+  const next = current + 1;
+  if (required && next > required) return "Reforço";
+  return `Dose ${next}`;
+}
+
 function fillVaccineFilter() {
   const select = $("#filter-vaccine");
   const seen = new Map();
   allRecords.forEach((r) => {
     const v = vaccineOf(r);
-    if (!seen.has(r.vaccineId)) seen.set(r.vaccineId, v?.nome || "Vacina");
+    if (!seen.has(r.vaccineId)) seen.set(r.vaccineId, v?.nome || r.vaccineNome || "Vacina");
   });
   [...seen.entries()]
     .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
@@ -241,7 +274,7 @@ function fillVaccineFilter() {
 }
 
 function doseLabel(numeroDose, vaccine) {
-  if (vaccine?.dosesNecessarias === 1) return "Dose Única";
+  if (requiredDosesOf(vaccine) === 1) return "Dose Única";
   return numeroDose ? `Dose ${numeroDose}` : "Dose Única";
 }
 
@@ -251,31 +284,33 @@ function doseLabel(numeroDose, vaccine) {
  * ainda não foi registrada.
  */
 function buildDisplayRecords() {
-  const applied = new Set(allRecords.map((r) => `${r.vaccineId}:${r.numeroDose}`));
+  const applied = new Set(allRecords.map((r) => `${r.vaccineId}:${doseNumberOf(r)}`));
   const display = [];
 
   allRecords.forEach((r) => {
     const vaccine = vaccineOf(r);
-    const vaccineNome = vaccine?.nome || "Vacina";
+    const vaccineNome = vaccine?.nome || r.vaccineNome || "Vacina";
 
     display.push({
       id: r.id,
       vaccineId: r.vaccineId,
       vaccineNome,
-      dose: doseLabel(r.numeroDose, vaccine),
+      dose: appliedDoseLabel(r, vaccine),
       date: r.dataAplicacao,
       local: r.local,
       status: "applied",
     });
 
-    const nextDose = (r.numeroDose || 0) + 1;
-    if (r.dataProximaDose && !applied.has(`${r.vaccineId}:${nextDose}`)) {
+    const nextDate = nextDateOf(r);
+    const current = doseNumberOf(r);
+    const nextAlreadyApplied = current !== null && applied.has(`${r.vaccineId}:${current + 1}`);
+    if (nextDate && !nextAlreadyApplied) {
       display.push({
         id: `${r.id}-next`,
         vaccineId: r.vaccineId,
         vaccineNome,
-        dose: doseLabel(nextDose, vaccine),
-        date: r.dataProximaDose,
+        dose: pendingDoseLabel(r, vaccine),
+        date: nextDate,
         status: "pending",
       });
     }
@@ -327,7 +362,7 @@ function renderRecords() {
         <a class="icon-btn" aria-label="Editar registro" href="vaccine-record-form.html?id=${encodeURIComponent(r.id)}">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
         </a>
-        <button class="icon-btn icon-btn--danger" aria-label="Excluir registro" data-delete="${Utils.escapeHtml(r.id)}" type="button">
+        <button class="icon-btn icon-btn--danger" aria-label="Excluir registro de ${Utils.escapeHtml(r.vaccineNome)}" data-delete="${Utils.escapeHtml(r.id)}" type="button">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0l-1 14a2 2 0 01-2 2H7a2 2 0 01-2-2L4 6"/></svg>
         </button>
       </div>`}
@@ -341,13 +376,35 @@ function renderRecords() {
 }
 
 async function deleteRecord(id) {
-  if (!confirm("Remover este registro do histórico?")) return;
+  const record = allRecords.find((r) => r.id === id);
+  const vaccine = record ? vaccineOf(record) : null;
+  const nome = vaccine?.nome || record?.vaccineNome || "esta vacina";
+  const dose = record ? appliedDoseLabel(record, vaccine) : "";
+
+  const confirmed = await Utils.confirmDialog({
+    title: "Excluir registro?",
+    message: `${nome}${dose ? " · " + dose : ""} será removido do seu histórico. Os lembretes ligados a este registro também serão excluídos. Essa ação não pode ser desfeita.`,
+    confirmText: "Excluir",
+    danger: true,
+  });
+  if (!confirmed) return;
+
+  const btn = $(`[data-delete="${CSS.escape(id)}"]`);
+  if (btn) btn.disabled = true;
+
   try {
-    await Api.del(`${window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS}/${encodeURIComponent(id)}`);
+    const result = await Api.del(`${window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS}/${encodeURIComponent(id)}`);
     allRecords = allRecords.filter((r) => r.id !== id);
     renderRecords();
-    Utils.toast("Registro removido.", "success");
+    const removed = result?.removedReminders || 0;
+    Utils.toast(
+      removed > 0
+        ? `Registro excluído (e ${removed} ${removed === 1 ? "lembrete" : "lembretes"}).`
+        : "Registro excluído.",
+      "success"
+    );
   } catch (err) {
-    Utils.toast(err.message || "Não foi possível remover o registro.", "error");
+    if (btn) btn.disabled = false;
+    Utils.toast(err.message || "Não foi possível excluir o registro.", "error");
   }
 }
