@@ -24,3 +24,14 @@ export const getAllCampaigns = async () => {
   log.info({ count: campaigns.length, campaigns: sanitizeForLog(campaigns) }, "CampaignService.getAllCampaigns: campanhas carregadas.");
   return campaigns;
 };
+
+import { prisma } from "../../lib/prisma";
+
+export const getCampanhasEmDestaque = async () => {
+  // Retorna campanhas ativas (data final maior que hoje) ordenadas pela data mais próxima
+  return await prisma.campaign.findMany({
+    where: { dataFim: { gte: new Date() } },
+    orderBy: { dataInicio: "asc" },
+    take: 5,
+  });
+};

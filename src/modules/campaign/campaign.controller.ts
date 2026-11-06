@@ -35,3 +35,15 @@ export const list = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erro ao listar campanhas" });
   }
 };
+
+import { Request, Response } from "express";
+import * as campaignService from "./campaign.service";
+
+export const destaques = async (req: Request, res: Response) => {
+  try {
+    const result = await campaignService.getCampanhasEmDestaque();
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: "Erro ao buscar campanhas", detalhes: error.message });
+  }
+};

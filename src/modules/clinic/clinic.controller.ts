@@ -31,3 +31,23 @@ export const list = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Erro ao listar clínicas" });
   }
 };
+
+export const proximas = async (req: Request, res: Response) => {
+  try {
+    const { lat, lon, raio } = req.query;
+    
+    if (!lat || !lon) {
+      return res.status(400).json({ error: "Latitude (lat) e longitude (lon) são obrigatórias." });
+    }
+
+    const result = await clinicService.getClinicasProximas(
+      Number(lat), 
+      Number(lon), 
+      raio ? Number(raio) : 10
+    );
+    
+    res.status(200).json(result);
+  } catch (error: any) {
+    res.status(500).json({ error: "Erro ao buscar clínicas próximas", detalhes: error.message });
+  }
+};

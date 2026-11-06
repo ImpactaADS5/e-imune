@@ -34,3 +34,39 @@ export const getAllReminders = async (userId: string) => {
   log.info({ userId, count: reminders.length, reminders: sanitizeForLog(reminders) }, "ReminderService.getAllReminders: lembretes carregados.");
   return reminders;
 };
+
+export const updateReminder = async (id: string, userId: string, data: Partial<CreateReminderInput>) => {
+  log.debug({ id, userId, data: sanitizeForLog(data) }, "ReminderService.updateReminder: iniciando atualização.");
+  
+  const existing = await prisma.reminder.findFirst({ where: { id, userId } });
+  if (!existing) {
+    const error = new Error("Lembrete não encontrado.") as Error & { code?: string };
+    error.code = "REMINDER_NOT_FOUND";
+    throw error;
+  }
+
+  const updateData: any = { ...data };
+  if (data.agendadoPara) updateData.agendadoPara = new Date(data.agendadoPara);
+
+  const reminder = await prisma.reminder.update({
+    where: { id },
+    data: updateData,
+  });
+
+  log.info({ reminder: sanitizeForLog(reminder) }, "ReminderService.updateReminder: lembrete atualizado.");
+  return reminder;
+};
+
+export const deleteReminder = async (id: string, userId: string) => {
+  log.debug({ id, userId }, "ReminderService.deleteReminder: iniciando exclusão.");
+  
+  const existing = await prisma.reminder.findFirst({ where: { id, userId } });
+  if (!existing) {
+    const error = new Error("Lembrete não encontrado.") as Error & { code?: string };
+    error.code = "REMINDER_NOT_FOUND";
+    throw error;
+  }
+
+  await prisma.reminder.delete({ where: { id } });
+  log.info({ id }, "ReminderService.deleteReminder: lembrete excluído com sucesso.");
+};
