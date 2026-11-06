@@ -17,7 +17,9 @@ npm run db:setup
 DATABASE_URL="postgresql://eimune:eimune123@localhost:6032/eimune_db?schema=public"
 ```
 
-Credenciais vêm do `docker-compose.yml` (`eimune` / `eimune123` / `eimune_db`, porta **6032**).
+Credenciais vêm do `docker-compose.yml`: usuário `eimune`, senha `eimune123`, banco `eimune_db`, porta **6032**.
+
+Passo a passo completo e erros comuns da instalação (`P3005`, `P1001`, porta ocupada): [README](../README.md#iniciar-o-projeto).
 
 ## Decisão de migração
 
