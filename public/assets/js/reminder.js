@@ -126,14 +126,14 @@ function renderStatus() {
   const el = $("#reminder-status");
   el.classList.remove("reminder-status--alert");
   if (!reminder) {
-    el.textContent = "Ative para receber um aviso antes da dose.";
+    el.textContent = "Ative para visualizar um aviso no aplicativo antes da dose.";
     return;
   }
   const messages = {
     DESATIVADO: "Lembrete desativado. Você não receberá avisos desta dose.",
     SEM_DATA: "O registro não tem mais data de próxima dose.",
-    AGENDADO: `Você será avisado em ${formatDisparo(reminder.disparoEm)}.`,
-    PENDENTE: `Aviso disparado em ${formatDisparo(reminder.disparoEm)}. Não esqueça da sua dose!`,
+    AGENDADO: `O aviso aparecerá neste aplicativo em ${formatDisparo(reminder.disparoEm)}.`,
+    PENDENTE: `Aviso disponível desde ${formatDisparo(reminder.disparoEm)}. Não esqueça da sua dose!`,
     LIDO: "Você já viu o aviso desta dose.",
   };
   el.textContent = messages[reminder.status] || "";

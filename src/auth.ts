@@ -139,4 +139,42 @@ router.post('/logout', requireAuth, async (req: Request, res: Response) => {
   return res.status(204).send();
 });
 
+
+// Sessões exibidas na tela de segurança. Apenas sessões do usuário autenticado.
+router.get("/sessions", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const sessions = await prisma.session.findMany({
+      where: {
+        userId: req.user!.userId, revogadoEm: null, expiraEm: { gt: new Date() },
+      },
+      orderBy: { criadoEm: "desc" },
+      take: 50,
+      select: { id: true, jti: true, userAgent: true, ip: true, criadoEm: true },
+    });
+    return res.json(sessions.map((s) => ({
+      id: s.id, dispositivo: s.userAgent || "Dispositivo não identificado",
+      userAgent: s.userAgent, ip: s.ip, criadoEm: s.criadoEm,
+      atual: s.jti === req.user!.jti,
+    })));
+  } catch { return res.status(500).json({ error: "Erro ao carregar sessões." }); }
+});
+
+router.delete("/sessions/:id", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const sessionId = req.params.id;
+    if (typeof sessionId !== "string") return res.status(400).json({ error: "Sessão inválida." });
+    const session = await prisma.session.findFirst({
+      where: { id: sessionId, userId: req.user!.userId,
+               revogadoEm: null, expiraEm: { gt: new Date() } },
+    });
+    if (!session) return res.status(404).json({ error: "Sessão não encontrada." });
+    if (session.jti === req.user!.jti)
+      return res.status(400).json({ error: "Use Sair da conta para encerrar a sessão atual." });
+    await prisma.session.update({
+      where: { id: session.id }, data: { revogadoEm: new Date() },
+    });
+    return res.status(204).send();
+  } catch { return res.status(500).json({ error: "Erro ao encerrar sessão." }); }
+});
+
 export default router;

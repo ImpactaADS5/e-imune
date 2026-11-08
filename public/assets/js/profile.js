@@ -204,7 +204,14 @@ function initAccount() {
     });
     if (!confirmed) return;
     try {
-      await Api.del(ENDPOINTS().ME);
+      // Confirmação adicional no servidor evita exclusão só com acesso ao navegador.
+      const senha = window.prompt("Digite sua senha atual para confirmar a exclusão definitiva:");
+      if (senha === null) return;
+      if (!senha) {
+        Utils.toast("Informe sua senha para excluir a conta.", "error");
+        return;
+      }
+      await Api.del(ENDPOINTS().ME, { body: { senha } });
       Api.clearSession();
       window.location.href = "login.html";
     } catch (err) {
@@ -300,38 +307,22 @@ let sessions = [];
 
 function renderSecurityCard(twoFactorEnabled) {
   $("#security-card").classList.toggle("security-card--warning", !twoFactorEnabled);
-  $("#security-title").textContent = twoFactorEnabled ? "Sua conta está protegida!" : "Proteja ainda mais sua conta";
+  $("#security-title").textContent = twoFactorEnabled ? "Sua conta está protegida!" : "Autenticação em duas etapas indisponível";
   $("#security-text").textContent = twoFactorEnabled
     ? "Mantenha sua conta segura e seus dados protegidos."
-    : "Ative a autenticação em duas etapas para dificultar o acesso de outras pessoas.";
+    : "Esse recurso ainda não está implementado. Sua conta continua protegida pela senha.";
 }
 
 async function initSecurity() {
   const twoFactor = $("#two-factor");
 
-  try {
-    const user = await Api.get(ENDPOINTS().ME);
-    twoFactor.checked = Boolean(user.twoFactorEnabled);
-    twoFactor.disabled = false;
-    renderSecurityCard(twoFactor.checked);
-  } catch (err) {
-    Utils.toast(err.message || "Não foi possível carregar suas configurações.", "error");
-  }
-
-  twoFactor.addEventListener("change", async () => {
-    const enabled = twoFactor.checked;
-    twoFactor.disabled = true;
-    try {
-      await Api.put(ENDPOINTS().ME_TWO_FACTOR, { enabled });
-      renderSecurityCard(enabled);
-      Utils.toast(enabled ? "Autenticação em duas etapas ativada." : "Autenticação em duas etapas desativada.", "success");
-    } catch (err) {
-      twoFactor.checked = !enabled;
-      Utils.toast(err.message || "Não foi possível alterar a autenticação em duas etapas.", "error");
-    } finally {
-      twoFactor.disabled = false;
-    }
-  });
+  // O backend ainda não valida um segundo fator no login.
+  // Não apresentar uma chave de ativação que forneceria falsa segurança.
+  twoFactor.checked = false;
+  twoFactor.disabled = true;
+  renderSecurityCard(false);
+  const description = document.querySelector('label[for="two-factor"] .setting-row__desc');
+  if (description) description.textContent = "Em desenvolvimento — ainda indisponível.";
 
   const sessionsBtn = $("#btn-sessions");
   sessionsBtn.addEventListener("click", () => {

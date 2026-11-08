@@ -7,6 +7,7 @@ import { env } from "./config/env";
 import log from "./lib/log";
 import { requestLogger } from "./middleware/request-logger";
 import authRouter from "./auth";
+import profileRoutes from "./modules/profile.routes";
 import vaccineRoutes from "./modules/vaccine/vaccine.routes";
 import clinicRoutes from "./modules/clinic/clinic.routes";
 import campaignRoutes from "./modules/campaign/campaign.routes";
@@ -41,6 +42,7 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHea
 
 app.use("/api", apiLimiter);
 app.use("/api/auth", authLimiter, authRouter);
+app.use("/api/users", profileRoutes);
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/reminders", reminderRoutes);
 app.use("/api/vaccine-records", vaccineRecordRoutes);
