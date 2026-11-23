@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="../assets/css/components.css" />
 <link rel="stylesheet" href="../assets/css/responsive.css" />
 <link rel="stylesheet" href="../assets/css/list.css" />
+<link rel="stylesheet" href="../assets/css/wallet.css" />
 </head>
 <body>
   <div class="app-shell app-shell--app">
@@ -26,6 +27,29 @@
     </header>
 
     <main class="screen screen--padded" style="padding-top:8px;">
+      <section class="wallet-actions" aria-labelledby="wallet-actions-title">
+        <div class="wallet-actions__copy">
+          <h2 class="wallet-actions__title" id="wallet-actions-title">Sua carteira de vacinação</h2>
+          <p>Veja todas as aplicações e as próximas doses em uma versão pronta para imprimir ou salvar em PDF.</p>
+        </div>
+        <button class="btn btn-primary wallet-actions__button" id="btn-wallet-preview" type="button" aria-controls="wallet-preview" aria-expanded="false" disabled>
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+          Pré-visualizar carteira
+        </button>
+        <p class="wallet-actions__note" id="wallet-actions-note">A carteira inclui todos os seus registros, mesmo com filtros ativos. Ela contém informações de saúde; salve ou imprima em um dispositivo confiável.</p>
+      </section>
+
+      <section class="wallet-preview" id="wallet-preview" aria-labelledby="wallet-title" hidden>
+        <div class="wallet-preview__toolbar" aria-label="Ações da carteira">
+          <button class="btn btn-ghost" id="btn-wallet-close" type="button">Fechar prévia</button>
+          <button class="btn btn-primary" id="btn-wallet-print" type="button">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+            Imprimir / salvar em PDF
+          </button>
+        </div>
+        <article class="wallet-document" id="wallet-document"></article>
+      </section>
+
       <div class="list-filters">
         <button class="filter-chip is-active" data-filter="all" type="button">Todas <span class="filter-chip__count">0</span></button>
         <button class="filter-chip" data-filter="past" type="button">Aplicadas <span class="filter-chip__count">0</span></button>

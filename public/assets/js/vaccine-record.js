@@ -181,6 +181,7 @@ let allRecords = [];
 let vaccineCatalog = new Map();
 let currentFilter = "all";
 let currentVaccineId = "";
+let currentProfile = null;
 
 async function initRecordList() {
   const params = new URLSearchParams(window.location.search);
@@ -203,12 +204,22 @@ async function initRecordList() {
     renderRecords();
   });
 
+  $("#btn-wallet-preview").addEventListener("click", openWalletPreview);
+  $("#btn-wallet-close").addEventListener("click", closeWalletPreview);
+  $("#btn-wallet-print").addEventListener("click", printWallet);
+
   try {
-    const [records, vaccines] = await Promise.all([
+    const [records, vaccines, profile] = await Promise.all([
       Api.get(window.API_CONFIG.ENDPOINTS.VACCINE_RECORDS),
       Api.get(window.API_CONFIG.ENDPOINTS.VACCINES).catch(() => []),
+      Api.get(window.API_CONFIG.ENDPOINTS.ME).catch(() => null),
     ]);
     allRecords = records || [];
+    const profileData = profile || Api.getUser() || {};
+    currentProfile = {
+      nome: profileData.nome || null,
+      dataNascimento: profileData.dataNascimento || null,
+    };
     (vaccines || []).forEach((v) => vaccineCatalog.set(v.id, v));
     fillVaccineFilter();
     renderRecords();
@@ -324,6 +335,7 @@ function renderRecords() {
   const listEl = $("#record-list");
   const emptyEl = $("#record-empty");
   const byVaccine = buildDisplayRecords().filter((r) => !currentVaccineId || r.vaccineId === currentVaccineId);
+  $("#btn-wallet-preview").disabled = allRecords.length === 0;
 
   const counts = {
     all: byVaccine.length,
@@ -373,6 +385,128 @@ function renderRecords() {
   $$("[data-delete]", listEl).forEach((btn) =>
     btn.addEventListener("click", () => deleteRecord(btn.dataset.delete))
   );
+}
+
+function openWalletPreview() {
+  if (allRecords.length === 0) return;
+
+  $("#wallet-document").innerHTML = buildWalletMarkup();
+  const preview = $("#wallet-preview");
+  preview.hidden = false;
+  document.body.classList.add("wallet-preview-open");
+  $("#btn-wallet-preview").setAttribute("aria-expanded", "true");
+  preview.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("#wallet-title").focus({ preventScroll: true });
+}
+
+function closeWalletPreview() {
+  $("#wallet-preview").hidden = true;
+  document.body.classList.remove("wallet-preview-open");
+  $("#btn-wallet-preview").setAttribute("aria-expanded", "false");
+  $("#btn-wallet-preview").focus();
+}
+
+function printWallet() {
+  const previousTitle = document.title;
+  document.title = "Carteira de vacinação - e-Immune";
+  window.addEventListener("afterprint", () => {
+    document.title = previousTitle;
+  }, { once: true });
+  window.print();
+}
+
+function walletDate(value) {
+  if (typeof value !== "string" || !value) return "—";
+  return Utils.escapeHtml(Utils.formatDateBR(value.slice(0, 10)));
+}
+
+function buildWalletMarkup() {
+  const name = currentProfile?.nome || "Usuário";
+  const birthDate = currentProfile?.dataNascimento || null;
+  const today = Utils.todayISO();
+  const appliedRecords = [...allRecords].sort((a, b) =>
+    String(b.dataAplicacao || "").localeCompare(String(a.dataAplicacao || ""))
+  );
+  const pendingRecords = buildDisplayRecords()
+    .filter((record) => record.status === "pending")
+    .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+  const vaccineCount = new Set(allRecords.map((record) => record.vaccineId)).size;
+
+  const appliedMarkup = appliedRecords.map((record) => {
+    const vaccine = vaccineOf(record);
+    const vaccineName = vaccine?.nome || record.vaccineNome || record.nomeVacina || "Vacina";
+    const dose = appliedDoseLabel(record, vaccine);
+    return `
+      <article class="wallet-record">
+        <div class="wallet-record__top">
+          <div>
+            <h4 class="wallet-record__title">${Utils.escapeHtml(vaccineName)}</h4>
+            <p class="wallet-record__dose">${Utils.escapeHtml(dose)}</p>
+          </div>
+          <span class="wallet-record__badge wallet-record__badge--applied">Aplicada</span>
+        </div>
+        <dl class="wallet-record__details">
+          <div><dt>Data da aplicação</dt><dd>${walletDate(record.dataAplicacao)}</dd></div>
+          <div><dt>Local</dt><dd>${Utils.escapeHtml(record.local || "Não informado")}</dd></div>
+          <div><dt>Lote</dt><dd>${Utils.escapeHtml(record.lote || "Não informado")}</dd></div>
+        </dl>
+      </article>`;
+  }).join("");
+
+  const pendingMarkup = pendingRecords.length
+    ? pendingRecords.map((record) => {
+        const isOverdue = record.date < today;
+        return `
+          <article class="wallet-record wallet-record--pending">
+            <div class="wallet-record__top">
+              <div>
+                <h4 class="wallet-record__title">${Utils.escapeHtml(record.vaccineNome || "Vacina")}</h4>
+                <p class="wallet-record__dose">${Utils.escapeHtml(record.dose || "Próxima dose")}</p>
+              </div>
+              <span class="wallet-record__badge ${isOverdue ? "wallet-record__badge--overdue" : "wallet-record__badge--pending"}">${isOverdue ? "Atrasada" : "Prevista"}</span>
+            </div>
+            <dl class="wallet-record__details wallet-record__details--pending">
+              <div><dt>Data prevista</dt><dd>${walletDate(record.date)}</dd></div>
+            </dl>
+          </article>`;
+      }).join("")
+    : '<p class="wallet-empty">Nenhuma próxima dose foi informada nos seus registros.</p>';
+
+  return `
+    <header class="wallet-document__header">
+      <div class="wallet-document__brand">
+        <img src="../assets/img/logo.svg" alt="" aria-hidden="true" />
+        <span>e-Immune</span>
+      </div>
+      <p class="wallet-document__eyebrow">CARTEIRA DIGITAL</p>
+      <h2 class="wallet-document__title" id="wallet-title" tabindex="-1">Carteira de vacinação</h2>
+      <p class="wallet-document__subtitle">Histórico pessoal de aplicações e doses previstas</p>
+      <dl class="wallet-identity">
+        <div><dt>Nome</dt><dd>${Utils.escapeHtml(name)}</dd></div>
+        ${birthDate ? `<div><dt>Data de nascimento</dt><dd>${walletDate(birthDate)}</dd></div>` : ""}
+      </dl>
+    </header>
+
+    <div class="wallet-summary" aria-label="Resumo da carteira">
+      <div class="wallet-summary__item"><strong>${allRecords.length}</strong><span>${allRecords.length === 1 ? "aplicação" : "aplicações"}</span></div>
+      <div class="wallet-summary__item"><strong>${vaccineCount}</strong><span>${vaccineCount === 1 ? "vacina" : "vacinas"}</span></div>
+      <div class="wallet-summary__item"><strong>${pendingRecords.length}</strong><span>${pendingRecords.length === 1 ? "dose pendente" : "doses pendentes"}</span></div>
+    </div>
+
+    <section class="wallet-section" aria-labelledby="wallet-applied-title">
+      <h3 class="wallet-section__title" id="wallet-applied-title">Aplicações registradas</h3>
+      <div class="wallet-record-list">${appliedMarkup}</div>
+    </section>
+
+    <section class="wallet-section" aria-labelledby="wallet-pending-title">
+      <h3 class="wallet-section__title" id="wallet-pending-title">Próximas doses e pendências</h3>
+      <div class="wallet-record-list">${pendingMarkup}</div>
+    </section>
+
+    <footer class="wallet-document__footer">
+      <p>Gerada em ${walletDate(today)} pelo e-Immune.</p>
+      <p>Resumo dos registros informados pelo usuário. Não substitui a caderneta nem o comprovante oficial emitido pela unidade de saúde.</p>
+    </footer>`;
 }
 
 async function deleteRecord(id) {
